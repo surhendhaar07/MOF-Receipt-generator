@@ -1,7 +1,7 @@
-Flask==3.0.3
-pandas==2.2.2
-openpyxl==3.1.5
-num2words==0.5.14
-reportlab==4.5.1
-xhtml2pdf==0.2.17
+Flask
+pandas
+openpyxl
+num2words
+reportlab
+xhtml2pdf
 gunicorn
