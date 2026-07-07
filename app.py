@@ -24,8 +24,10 @@ def create_app():
     
     return app
 
+# Instantiate the Flask app globally so WSGI/development servers can discover it
+app = create_app()
+
 if __name__ == '__main__':
-    app = create_app()
     # Run Flask development server locally on port 5000
     print("Makkalil Oruvan Foundation Receipt Generator starting...")
     app.run(debug=True, host='127.0.0.1', port=5000)
