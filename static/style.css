@@ -1,0 +1,621 @@
+/* ==========================================
+   CSS DESIGN SYSTEM FOR MOF RECEIPT APP
+   ========================================== */
+
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=Playfair+Display:ital,wght@0,600;1,600&display=swap');
+
+/* --- Root variables --- */
+:root {
+    --dark-bg: #0f172a;
+    --dark-card: rgba(30, 41, 59, 0.7);
+    --dark-border: rgba(255, 255, 255, 0.08);
+    --text-primary: #f8fafc;
+    --text-secondary: #94a3b8;
+    --accent-blue: #38bdf8;
+    --accent-indigo: #818cf8;
+    --accent-gradient: linear-gradient(90deg, #38bdf8 0%, #818cf8 100%);
+    --success-green: #10b981;
+    --error-red: #ef4444;
+}
+
+/* ==========================================
+   1. DASHBOARD STYLING (Web UI)
+   ========================================== */
+
+body.dashboard-body {
+    background: linear-gradient(135deg, var(--dark-bg) 0%, #1e293b 100%);
+    color: var(--text-primary);
+    font-family: 'Inter', sans-serif;
+    min-height: 100vh;
+    padding-bottom: 50px;
+    margin: 0;
+}
+
+.dashboard-container {
+    max-width: 1000px;
+    margin: 0 auto;
+    padding: 40px 20px;
+}
+
+/* Glassmorphism Header */
+.dashboard-header {
+    text-align: center;
+    margin-bottom: 40px;
+}
+
+.dashboard-header h1 {
+    font-size: 2.5rem;
+    font-weight: 800;
+    margin-bottom: 8px;
+    background: var(--accent-gradient);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    letter-spacing: -0.5px;
+}
+
+.dashboard-header p {
+    color: var(--text-secondary);
+    font-size: 1.1rem;
+    font-weight: 400;
+}
+
+/* Glassmorphism Card */
+.glass-card {
+    background: var(--dark-card);
+    backdrop-filter: blur(16px);
+    -webkit-backdrop-filter: blur(16px);
+    border: 1px solid var(--dark-border);
+    border-radius: 16px;
+    padding: 30px;
+    box-shadow: 0 10px 30px rgba(0, 0, 0, 0.25);
+    margin-bottom: 30px;
+    transition: transform 0.3s ease, box-shadow 0.3s ease;
+}
+
+.glass-card:hover {
+    box-shadow: 0 12px 40px rgba(56, 189, 248, 0.1);
+}
+
+/* Section Titles */
+.section-title {
+    font-size: 1.3rem;
+    font-weight: 700;
+    margin-bottom: 20px;
+    border-left: 4px solid var(--accent-blue);
+    padding-left: 12px;
+    color: var(--text-primary);
+}
+
+/* Drag and Drop Upload Area */
+.upload-area {
+    border: 2px dashed rgba(56, 189, 248, 0.3);
+    border-radius: 12px;
+    padding: 40px 20px;
+    text-align: center;
+    background: rgba(15, 23, 42, 0.4);
+    cursor: pointer;
+    transition: border-color 0.3s ease, background 0.3s ease;
+    position: relative;
+}
+
+.upload-area:hover, .upload-area.dragover {
+    border-color: var(--accent-blue);
+    background: rgba(15, 23, 42, 0.6);
+}
+
+.upload-icon {
+    font-size: 3rem;
+    color: var(--accent-blue);
+    margin-bottom: 15px;
+}
+
+.upload-text {
+    font-size: 1.1rem;
+    font-weight: 600;
+    color: var(--text-primary);
+    margin-bottom: 5px;
+}
+
+.upload-subtext {
+    font-size: 0.85rem;
+    color: var(--text-secondary);
+}
+
+.file-input {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    opacity: 0;
+    cursor: pointer;
+}
+
+/* Premium Buttons */
+.btn-primary-gradient {
+    background: var(--accent-gradient);
+    color: white;
+    font-weight: 600;
+    border: none;
+    border-radius: 8px;
+    padding: 10px 24px;
+    transition: transform 0.2s ease, opacity 0.2s ease, box-shadow 0.2s ease;
+}
+
+.btn-primary-gradient:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 4px 15px rgba(129, 140, 248, 0.4);
+    opacity: 0.95;
+    color: white;
+}
+
+.btn-primary-gradient:active {
+    transform: translateY(0);
+}
+
+.btn-secondary-outline {
+    background: transparent;
+    color: var(--text-primary);
+    border: 1px solid rgba(255, 255, 255, 0.15);
+    font-weight: 500;
+    border-radius: 8px;
+    padding: 10px 24px;
+    transition: background-color 0.3s ease, border-color 0.3s ease;
+}
+
+.btn-secondary-outline:hover {
+    background: rgba(255, 255, 255, 0.05);
+    border-color: var(--accent-blue);
+    color: var(--accent-blue);
+}
+
+.btn-reset-danger {
+    background: transparent;
+    color: #f87171;
+    border: 1px solid rgba(239, 68, 68, 0.3);
+    font-weight: 600;
+    border-radius: 8px;
+    padding: 8px 16px;
+    transition: background-color 0.3s ease, border-color 0.3s ease;
+}
+
+.btn-reset-danger:hover {
+    background: rgba(239, 68, 68, 0.1);
+    border-color: var(--error-red);
+    color: #fca5a5;
+}
+
+/* Progress bar */
+.progress-container {
+    margin-top: 25px;
+    display: none;
+}
+
+.progress {
+    height: 12px;
+    background-color: rgba(255, 255, 255, 0.05);
+    border-radius: 6px;
+    overflow: hidden;
+}
+
+.progress-bar {
+    background: var(--accent-gradient);
+    border-radius: 6px;
+    transition: width 0.4s ease;
+}
+
+/* Custom alerts */
+.alert-custom {
+    background: rgba(30, 41, 59, 0.5);
+    border: 1px solid var(--dark-border);
+    border-radius: 10px;
+    color: var(--text-primary);
+    padding: 15px;
+}
+
+.alert-custom-success {
+    border-left: 4px solid var(--success-green);
+    background: rgba(16, 185, 129, 0.05);
+}
+
+.alert-custom-danger {
+    border-left: 4px solid var(--error-red);
+    background: rgba(239, 68, 68, 0.05);
+}
+
+/* Search bar styling */
+.search-control {
+    background: rgba(15, 23, 42, 0.6);
+    border: 1px solid var(--dark-border);
+    color: var(--text-primary);
+    border-radius: 8px;
+    padding: 10px 16px;
+    transition: border-color 0.3s ease, box-shadow 0.3s ease;
+}
+
+.search-control:focus {
+    background: rgba(15, 23, 42, 0.8);
+    border-color: var(--accent-blue);
+    box-shadow: 0 0 0 2px rgba(56, 189, 248, 0.2);
+    color: var(--text-primary);
+    outline: none;
+}
+
+/* Table styling */
+.custom-table {
+    margin-top: 15px;
+    color: var(--text-primary);
+}
+
+.custom-table th {
+    background-color: rgba(15, 23, 42, 0.8);
+    border-bottom: 2px solid var(--dark-border) !important;
+    color: var(--text-secondary);
+    font-weight: 600;
+    padding: 14px 16px;
+    font-size: 0.9rem;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+}
+
+.custom-table td {
+    padding: 14px 16px;
+    border-bottom: 1px solid var(--dark-border);
+    font-size: 0.95rem;
+    vertical-align: middle;
+}
+
+.custom-table tbody tr {
+    transition: background-color 0.2s ease;
+}
+
+.custom-table tbody tr:hover {
+    background-color: rgba(255, 255, 255, 0.02);
+}
+
+/* History table preview/download icon buttons */
+.btn-action-icon {
+    width: 36px;
+    height: 36px;
+    border-radius: 50%;
+    display: inline-flex;
+    justify-content: center;
+    align-items: center;
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    color: var(--text-secondary);
+    background: transparent;
+    transition: all 0.2s ease;
+}
+
+.btn-action-icon:hover {
+    color: var(--accent-blue);
+    border-color: var(--accent-blue);
+    background: rgba(56, 189, 248, 0.05);
+}
+
+.btn-action-icon-download:hover {
+    color: var(--success-green);
+    border-color: var(--success-green);
+    background: rgba(16, 185, 129, 0.05);
+}
+
+/* Scrollbar styles */
+::-webkit-scrollbar {
+    width: 8px;
+    height: 8px;
+}
+::-webkit-scrollbar-track {
+    background: var(--dark-bg);
+}
+::-webkit-scrollbar-thumb {
+    background: rgba(255, 255, 255, 0.1);
+    border-radius: 4px;
+}
+::-webkit-scrollbar-thumb:hover {
+    background: rgba(255, 255, 255, 0.2);
+}
+
+/* ==========================================
+   2. RECEIPT TEMPLATE STYLING (For PDF/Print)
+   ========================================== */
+
+/* Base container representing receipt on screen or in pdf rendering */
+.receipt-print-body {
+    background-color: #fbfbfb;
+    margin: 0;
+    padding: 0;
+}
+
+.receipt-container {
+    width: 710px;
+    background-color: #ffffff;
+    box-sizing: border-box;
+    padding: 25px 35px;
+    margin: 20px auto;
+    border: 1px solid #eaeaea;
+    box-shadow: 0 4px 15px rgba(0,0,0,0.03);
+    font-family: 'Inter', sans-serif;
+    color: #111111;
+    position: relative;
+}
+
+/* Top Horizontal Header Bar */
+.receipt-header-bar {
+    background-color: #000000;
+    color: #ffffff;
+    font-family: 'Inter', sans-serif;
+    font-weight: 800;
+    font-size: 20px;
+    text-align: center;
+    padding: 6px 0;
+    letter-spacing: 1px;
+    border-radius: 4px;
+    margin-bottom: 25px;
+}
+
+/* Top section with Logo and Details */
+.receipt-top-section {
+    display: flex;
+    align-items: center;
+    margin-bottom: 30px;
+}
+
+.receipt-logo-container {
+    width: 140px;
+    display: flex;
+    justify-content: flex-start;
+}
+
+.receipt-logo {
+    width: 115px;
+    height: 125px;
+    object-fit: contain;
+}
+
+.receipt-info-container {
+    flex-grow: 1;
+    padding-left: 10px;
+}
+
+.receipt-foundation-name {
+    font-size: 21px;
+    font-weight: 800;
+    color: #111111;
+    letter-spacing: -0.2px;
+}
+
+.receipt-address, .receipt-contact {
+    font-size: 13px;
+    color: #333333;
+    margin-top: 3px;
+    font-weight: 500;
+}
+
+/* Fields grid columns */
+.receipt-grid {
+    display: flex;
+    justify-content: space-between;
+    margin-bottom: 35px;
+}
+
+/* Left Grid of Boxes */
+.receipt-grid-left {
+    width: 60%;
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+}
+
+.receipt-row {
+    display: flex;
+    align-items: stretch;
+    height: 30px;
+}
+
+.receipt-label {
+    width: 125px;
+    background-color: #cfcfcf;
+    color: #222222;
+    font-size: 13px;
+    font-weight: 600;
+    border-radius: 5px 0 0 5px;
+    display: flex;
+    align-items: center;
+    padding-left: 12px;
+    box-sizing: border-box;
+}
+
+.receipt-value {
+    flex-grow: 1;
+    border: 1px solid #b0b0b0;
+    border-left: none;
+    background-color: #ffffff;
+    font-size: 13px;
+    font-weight: 600;
+    color: #111111;
+    border-radius: 0 5px 5px 0;
+    display: flex;
+    align-items: center;
+    padding-left: 12px;
+    box-sizing: border-box;
+}
+
+/* Right Grid (Date Issued and Amount) */
+.receipt-grid-right {
+    width: 35%;
+    display: flex;
+    flex-direction: column;
+    gap: 15px;
+    align-items: flex-end;
+}
+
+.receipt-row-issued {
+    display: flex;
+    align-items: stretch;
+    height: 30px;
+    width: 100%;
+}
+
+.receipt-label-issued {
+    width: 110px;
+    background-color: #cfcfcf;
+    color: #222222;
+    font-size: 13px;
+    font-weight: 600;
+    border-radius: 5px 0 0 5px;
+    display: flex;
+    align-items: center;
+    padding-left: 10px;
+    box-sizing: border-box;
+}
+
+.receipt-value-issued {
+    flex-grow: 1;
+    border: 1px solid #b0b0b0;
+    border-left: none;
+    background-color: #ffffff;
+    font-size: 13px;
+    font-weight: 600;
+    color: #111111;
+    border-radius: 0 5px 5px 0;
+    display: flex;
+    align-items: center;
+    padding-left: 10px;
+    box-sizing: border-box;
+}
+
+/* Amount Badge */
+.receipt-amount-badge-container {
+    display: flex;
+    align-items: stretch;
+    height: 38px;
+    width: 100%;
+    margin-top: 10px;
+}
+
+.receipt-amount-symbol-box {
+    background-color: #000000;
+    color: #ffffff;
+    font-size: 20px;
+    font-weight: 800;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 36px;
+    border-radius: 4px 0 0 4px;
+}
+
+.receipt-amount-value-box {
+    flex-grow: 1;
+    border: 1.5px dashed #444444;
+    border-left: none;
+    background-color: #ffffff;
+    font-size: 17px;
+    font-weight: 800;
+    color: #000000;
+    display: flex;
+    align-items: center;
+    padding-left: 15px;
+    border-radius: 0 4px 4px 0;
+}
+
+/* Narrative thanks section */
+.receipt-narrative {
+    margin-top: 40px;
+    margin-bottom: 45px;
+    font-size: 14.5px;
+    font-weight: 500;
+    color: #000000;
+    line-height: 2.2;
+    font-family: 'Inter', sans-serif;
+}
+
+/* Dynamic underlined blue text fields */
+.receipt-underline-field {
+    border-bottom: 1px solid #5b7aa5;
+    color: #4b6a95;
+    font-weight: 700;
+    padding: 0 10px;
+    margin: 0 4px;
+    text-decoration: none;
+    font-family: 'Inter', sans-serif;
+}
+
+/* Solid divider rule */
+.receipt-divider {
+    border: none;
+    border-top: 1.5px solid #000000;
+    margin-bottom: 25px;
+    opacity: 1;
+}
+
+/* Signature block / Footer */
+.receipt-footer {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-start;
+    padding-left: 150px; /* Aligns Received By under narrative */
+}
+
+.receipt-received-by-label {
+    font-size: 16px;
+    font-weight: 800;
+    color: #111111;
+}
+
+.receipt-received-by-sub {
+    font-size: 11px;
+    font-weight: 600;
+    color: #555555;
+    margin-top: 2px;
+    margin-bottom: 6px;
+}
+
+.receipt-signature-container {
+    height: 55px;
+    display: flex;
+    align-items: center;
+    margin-bottom: 2px;
+}
+
+.receipt-signature-img {
+    height: 52px;
+    object-fit: contain;
+}
+
+.receipt-signer-name {
+    font-size: 13.5px;
+    font-weight: 800;
+    color: #111111;
+}
+
+.receipt-signer-title {
+    font-size: 11.5px;
+    font-weight: 600;
+    color: #555555;
+    margin-top: 1px;
+}
+
+/* Print Specific Rules for PDF Engine */
+@media print {
+    @page {
+        size: A4 portrait;
+        margin: 0;
+    }
+    
+    body.receipt-print-body {
+        background-color: #ffffff;
+        -webkit-print-color-adjust: exact;
+        print-color-adjust: exact;
+    }
+    
+    .receipt-container {
+        border: none;
+        box-shadow: none;
+        margin: 0 auto;
+        padding: 40px 45px;
+        width: 100%;
+        height: 100vh;
+        box-sizing: border-box;
+    }
+}

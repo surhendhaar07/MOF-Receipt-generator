@@ -1,0 +1,519 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Donation Receipt Generator - Makkalil Oruvan Foundation</title>
+    <!-- Bootstrap 5 CSS -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
+    <!-- Bootstrap Icons -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css" rel="stylesheet">
+    <!-- Google Fonts -->
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+    <!-- Custom stylesheet -->
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+</head>
+<body class="dashboard-body">
+
+    <div class="dashboard-container">
+        
+        <!-- Header -->
+        <header class="dashboard-header">
+            <i class="bi bi-gift-fill text-info" style="font-size: 2.8rem;"></i>
+            <h1>Makkalil Oruvan Foundation</h1>
+            <p>Donation Receipt Generator Dashboard</p>
+        </header>
+        
+        <div class="row">
+            <!-- Left Column: Upload & Actions -->
+            <div class="col-lg-7 col-md-12">
+                <div class="glass-card">
+                    <h2 class="section-title">Upload & Generate</h2>
+                    
+                    <form id="uploadForm">
+                        <div class="upload-area" id="uploadArea">
+                            <i class="bi bi-file-earmark-excel-fill upload-icon"></i>
+                            <div class="upload-text" id="uploadFileName">Drag & drop donation Excel here</div>
+                            <div class="upload-subtext">Supports .xlsx and .xls spreadsheets</div>
+                            <input type="file" name="file" id="excelFile" class="file-input" accept=".xlsx, .xls">
+                        </div>
+                        
+                        <div class="d-grid gap-2 mt-3">
+                            <button type="submit" class="btn btn-primary-gradient py-2">
+                                <i class="bi bi-gear-fill me-2"></i>Generate Receipts
+                            </button>
+                        </div>
+                    </form>
+                    
+                    <!-- Progress Container -->
+                    <div class="progress-container" id="progressBarContainer">
+                        <div class="d-flex justify-content-between mb-1">
+                            <span class="small text-secondary">Processing receipts...</span>
+                            <span class="small text-info fw-bold" id="progressPercent">0%</span>
+                        </div>
+                        <div class="progress">
+                            <div class="progress-bar progress-bar-striped progress-bar-animated" role="progressbar" id="progressBar" style="width: 0%"></div>
+                        </div>
+                    </div>
+                    
+                    <!-- Alerts Container -->
+                    <div id="alertsContainer" class="mt-3"></div>
+                    
+                    <!-- Batch Action Buttons Container -->
+                    <div class="mt-4 pt-3 border-top border-secondary-subtle" id="actionButtonsContainer" style="display: none;">
+                        <h4 class="small text-secondary mb-3">BATCH DOWNLOADS</h4>
+                        <div class="d-flex flex-wrap gap-2">
+                            <a id="downloadZipBtn" href="#" class="btn btn-primary-gradient px-3 py-2">
+                                <i class="bi bi-file-earmark-zip-fill me-2"></i>Download ZIP
+                            </a>
+                            <button type="button" onclick="downloadAllPDFs()" class="btn btn-secondary-outline px-3 py-2">
+                                <i class="bi bi-download me-2"></i>Download All PDFs
+                            </button>
+                            <button type="button" onclick="resetUploadBatch()" class="btn btn-secondary-outline px-3 py-2 text-warning border-warning-subtle">
+                                <i class="bi bi-arrow-counterclockwise me-2"></i>Reset Upload
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Right Column: Settings & Summary -->
+            <div class="col-lg-5 col-md-12">
+                <!-- Receipt Counter Info Card -->
+                <div class="glass-card mb-4">
+                    <h2 class="section-title">Receipt Tracking</h2>
+                    <div class="d-flex align-items-center justify-content-between mb-3">
+                        <div>
+                            <div class="text-secondary small">LAST GENERATED NUMBER</div>
+                            <div class="fs-2 fw-bold text-info" id="lastCounterLabel">MOFDR000</div>
+                        </div>
+                        <div class="text-end">
+                            <div class="text-secondary small">TODAY'S SYSTEM DATE</div>
+                            <div class="fs-5 fw-semibold" id="systemDateLabel">07/07/2026</div>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- Admin Settings Card -->
+                <div class="glass-card">
+                    <h2 class="section-title">Admin Settings</h2>
+                    <p class="small text-secondary mb-3">
+                        Manage donation counter numbering. Resetting will revert counter back to 0 (next receipt generated will start at <strong>MOFDR001</strong>).
+                    </p>
+                    <form id="resetCounterForm">
+                        <div class="mb-3">
+                            <label for="customStartNumber" class="form-label text-secondary small">CUSTOM COUNTER START (Optional)</label>
+                            <div class="input-group">
+                                <span class="input-group-text bg-dark border-secondary text-secondary">MOFDR</span>
+                                <input type="number" id="customStartNumber" min="0" class="form-control search-control" placeholder="0">
+                            </div>
+                            <div class="form-text text-secondary-50 small mt-1">E.g., input 100 to make the next receipt generated be MOFDR101.</div>
+                        </div>
+                        <button type="submit" class="btn btn-reset-danger w-100">
+                            <i class="bi bi-exclamation-triangle-fill me-2"></i>Reset Receipt Counter
+                        </button>
+                    </form>
+                    <hr class="border-secondary my-3">
+                    <p class="small text-secondary mb-2">
+                        Permanently clear all historical logs from the database and remove all generated PDF files from disk.
+                    </p>
+                    <button type="button" onclick="clearHistoryLogs()" class="btn btn-reset-danger w-100">
+                        <i class="bi bi-trash3-fill me-2"></i>Clear All History Logs
+                    </button>
+                    <div id="settingsAlertsContainer" class="mt-2"></div>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Bottom: History & Search Table -->
+        <div class="glass-card mt-4">
+            <div class="d-flex flex-wrap justify-content-between align-items-center mb-3 gap-2">
+                <h2 class="section-title mb-0">Generated Receipts History</h2>
+                <div class="col-md-5 col-sm-12">
+                    <div class="input-group">
+                        <span class="input-group-text bg-dark border-secondary text-secondary"><i class="bi bi-search"></i></span>
+                        <input type="text" id="historySearch" class="form-control search-control" placeholder="Search by Payer Name, Receipt No, Ref No, Date...">
+                    </div>
+                </div>
+            </div>
+            
+            <div class="table-responsive" style="max-height: 400px; overflow-y: auto;">
+                <table class="table custom-table table-dark table-striped mb-0">
+                    <thead>
+                        <tr>
+                            <th>Receipt No</th>
+                            <th>Payer Name</th>
+                            <th>Amount (₹)</th>
+                            <th>Payment Date</th>
+                            <th>Receipt Date</th>
+                            <th>Reference Number</th>
+                            <th class="text-center">Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody id="historyTableBody">
+                        <tr>
+                            <td colspan="7" class="text-center text-secondary py-4">Loading receipts history...</td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+        
+    </div>
+
+    <!-- Bootstrap 5 JS Bundle -->
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+
+    <!-- UI Logic Scripts -->
+    <script>
+        // Track the current batch of PDF downloads
+        window.generatedPdfs = [];
+
+        document.addEventListener('DOMContentLoaded', () => {
+            // Load initial tracking state and history log
+            loadTrackingState();
+            loadHistory();
+            
+            // Drag and drop event listeners
+            const uploadArea = document.getElementById('uploadArea');
+            const fileInput = document.getElementById('excelFile');
+            const uploadFileName = document.getElementById('uploadFileName');
+            
+            fileInput.addEventListener('change', () => {
+                if (fileInput.files.length) {
+                    uploadFileName.textContent = fileInput.files[0].name;
+                    uploadArea.classList.add('border-info');
+                }
+            });
+            
+            ['dragenter', 'dragover'].forEach(eventName => {
+                uploadArea.addEventListener(eventName, (e) => {
+                    e.preventDefault();
+                    uploadArea.classList.add('dragover');
+                }, false);
+            });
+            
+            ['dragleave', 'drop'].forEach(eventName => {
+                uploadArea.addEventListener(eventName, (e) => {
+                    e.preventDefault();
+                    uploadArea.classList.remove('dragover');
+                }, false);
+            });
+            
+            uploadArea.addEventListener('drop', (e) => {
+                const dt = e.dataTransfer;
+                const files = dt.files;
+                if (files.length) {
+                    fileInput.files = files;
+                    uploadFileName.textContent = files[0].name;
+                    uploadArea.classList.add('border-info');
+                }
+            });
+            
+            // Upload form submission
+            const uploadForm = document.getElementById('uploadForm');
+            uploadForm.addEventListener('submit', handleUploadSubmit);
+            
+            // Search handler
+            const searchInput = document.getElementById('historySearch');
+            searchInput.addEventListener('input', debounce(() => {
+                loadHistory(searchInput.value);
+            }, 300));
+            
+            // Reset counter form submission
+            const resetForm = document.getElementById('resetCounterForm');
+            resetForm.addEventListener('submit', handleResetCounterSubmit);
+        });
+
+        // Fetch counter details and system date
+        async function loadTrackingState() {
+            try {
+                const res = await fetch('/api/tracking-state');
+                if (res.ok) {
+                    const data = await res.json();
+                    document.getElementById('lastCounterLabel').textContent = data.last_number_formatted;
+                    document.getElementById('systemDateLabel').textContent = data.system_date;
+                }
+            } catch (err) {
+                console.error("Failed to load tracking state:", err);
+            }
+        }
+
+        // Fetch receipts log history
+        async function loadHistory(searchTerm = '') {
+            try {
+                const res = await fetch(`/api/history?search=${encodeURIComponent(searchTerm)}`);
+                if (res.ok) {
+                    const data = await res.json();
+                    const tbody = document.getElementById('historyTableBody');
+                    tbody.innerHTML = '';
+                    
+                    if (data.length === 0) {
+                        tbody.innerHTML = `<tr><td colspan="7" class="text-center text-secondary py-3">No matching records found.</td></tr>`;
+                        return;
+                    }
+                    
+                    data.forEach(item => {
+                        const tr = document.createElement('tr');
+                        
+                        tr.innerHTML = `
+                            <td class="fw-bold text-info">${item.receipt_number}</td>
+                            <td>${item.payer_name}</td>
+                            <td class="fw-bold">${item.amount}</td>
+                            <td>${item.payment_date}</td>
+                            <td>${item.receipt_date}</td>
+                            <td class="text-secondary small font-monospace">${item.reference_number || '-'}</td>
+                            <td class="text-center">
+                                <div class="d-flex justify-content-center gap-2">
+                                    <a href="/preview/${item.receipt_number}" target="_blank" class="btn-action-icon" title="Preview Receipt">
+                                        <i class="bi bi-eye-fill"></i>
+                                    </a>
+                                    <a href="/download/pdf/${item.receipt_number}" class="btn-action-icon btn-action-icon-download" title="Download PDF">
+                                        <i class="bi bi-download"></i>
+                                    </a>
+                                    <button type="button" onclick="deleteReceipt('${item.receipt_number}')" class="btn-action-icon text-danger border-danger-subtle" title="Delete Receipt">
+                                        <i class="bi bi-trash-fill"></i>
+                                    </button>
+                                </div>
+                            </td>
+                        `;
+                        tbody.appendChild(tr);
+                    });
+                }
+            } catch (err) {
+                console.error("Failed to load history:", err);
+            }
+        }
+
+        // Handle Excel Upload
+        async function handleUploadSubmit(e) {
+            e.preventDefault();
+            const fileInput = document.getElementById('excelFile');
+            const alertsContainer = document.getElementById('alertsContainer');
+            const progressContainer = document.getElementById('progressBarContainer');
+            const progressBar = document.getElementById('progressBar');
+            const progressPercent = document.getElementById('progressPercent');
+            
+            if (!fileInput.files.length) {
+                showUIAler('danger', 'Please select an Excel spreadsheet to upload.');
+                return;
+            }
+            
+            alertsContainer.innerHTML = '';
+            progressContainer.style.display = 'block';
+            progressBar.style.width = '0%';
+            progressPercent.textContent = '0%';
+            
+            const formData = new FormData();
+            formData.append('file', fileInput.files[0]);
+            
+            // Artificial progress bar updates for feedback during backend PDF processing
+            let currentProgress = 0;
+            const progressInterval = setInterval(() => {
+                if (currentProgress < 90) {
+                    currentProgress += (90 - currentProgress) * 0.15;
+                    progressBar.style.width = `${Math.round(currentProgress)}%`;
+                    progressPercent.textContent = `${Math.round(currentProgress)}%`;
+                }
+            }, 250);
+            
+            try {
+                const response = await fetch('/generate', {
+                    method: 'POST',
+                    body: formData
+                });
+                
+                clearInterval(progressInterval);
+                progressBar.style.width = '100%';
+                progressPercent.textContent = '100%';
+                
+                const result = await response.json();
+                
+                if (response.ok) {
+                    let summaryHtml = `<strong>Success!</strong> ${result.message}`;
+                    
+                    if (result.skipped_duplicates && result.skipped_duplicates.length > 0) {
+                        summaryHtml += `<div class="mt-2 text-warning small">
+                            <i class="bi bi-exclamation-triangle-fill me-1"></i>
+                            Skipped ${result.skipped_duplicates.length} duplicate payment reference numbers:<br>
+                            <span class="font-monospace text-secondary-50">${result.skipped_duplicates.join(', ')}</span>
+                        </div>`;
+                    }
+                    
+                    showUIAler('success', summaryHtml);
+                    
+                    if (result.count > 0) {
+                        // Display batch download panel
+                        document.getElementById('actionButtonsContainer').style.display = 'block';
+                        document.getElementById('downloadZipBtn').href = `/download/zip/${result.batch_id}`;
+                        window.generatedPdfs = result.pdf_urls;
+                    } else {
+                        document.getElementById('actionButtonsContainer').style.display = 'none';
+                    }
+                    
+                    loadTrackingState();
+                    loadHistory();
+                } else {
+                    showUIAler('danger', result.error || 'Failed to process files.');
+                    document.getElementById('actionButtonsContainer').style.display = 'none';
+                }
+            } catch (err) {
+                clearInterval(progressInterval);
+                showUIAler('danger', 'An error occurred during network submission.');
+                document.getElementById('actionButtonsContainer').style.display = 'none';
+            } finally {
+                setTimeout(() => {
+                    progressContainer.style.display = 'none';
+                }, 2000);
+            }
+        }
+
+        // Handle Counter Reset
+        async function handleResetCounterSubmit(e) {
+            e.preventDefault();
+            const customStartInput = document.getElementById('customStartNumber');
+            const alertsContainer = document.getElementById('settingsAlertsContainer');
+            alertsContainer.innerHTML = '';
+            
+            const customVal = customStartInput.value.trim();
+            const promptMsg = customVal !== '' 
+                ? `Are you sure you want to reset the receipt counter start to ${customVal}?`
+                : 'Are you sure you want to reset the receipt counter back to start (MOFDR001)?';
+                
+            if (!confirm(promptMsg)) {
+                return;
+            }
+            
+            try {
+                const response = await fetch('/admin/reset-counter', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({ start_val: customVal })
+                });
+                
+                const result = await response.json();
+                
+                if (response.ok) {
+                    showSettingsAler('success', result.message);
+                    customStartInput.value = '';
+                    loadTrackingState();
+                } else {
+                    showSettingsAler('danger', result.error || 'Failed to reset counter.');
+                }
+            } catch (err) {
+                showSettingsAler('danger', 'Network error resetting counter.');
+            }
+        }
+
+        // Handle Single Receipt Deletion
+        async function deleteReceipt(receiptNumber) {
+            if (!confirm(`Are you sure you want to permanently delete receipt ${receiptNumber} and its PDF file?`)) {
+                return;
+            }
+            
+            try {
+                const response = await fetch(`/api/delete-receipt/${receiptNumber}`, {
+                    method: 'POST'
+                });
+                
+                const result = await response.json();
+                if (response.ok) {
+                    loadHistory(document.getElementById('historySearch').value);
+                    loadTrackingState();
+                    alert(result.message);
+                } else {
+                    alert(result.error || 'Failed to delete receipt.');
+                }
+            } catch (err) {
+                alert('Network error deleting receipt.');
+            }
+        }
+
+        // Handle Clear History Logs
+        async function clearHistoryLogs() {
+            if (!confirm('WARNING: Are you sure you want to permanently clear ALL generated receipts from database and delete all PDF files from disk? This action CANNOT be undone.')) {
+                return;
+            }
+            
+            try {
+                const response = await fetch('/admin/clear-history', {
+                    method: 'POST'
+                });
+                
+                const result = await response.json();
+                const alertsContainer = document.getElementById('settingsAlertsContainer');
+                
+                if (response.ok) {
+                    showSettingsAler('success', result.message);
+                    loadHistory();
+                    loadTrackingState();
+                } else {
+                    showSettingsAler('danger', result.error || 'Failed to clear history.');
+                }
+            } catch (err) {
+                showSettingsAler('danger', 'Network error clearing history.');
+            }
+        }
+
+        // Sequential downloader helper
+        function downloadAllPDFs() {
+            if (!window.generatedPdfs || window.generatedPdfs.length === 0) {
+                alert('No receipts in the current batch to download.');
+                return;
+            }
+            
+            window.generatedPdfs.forEach((pdf, index) => {
+                setTimeout(() => {
+                    const a = document.createElement('a');
+                    a.href = pdf.url;
+                    a.download = pdf.name;
+                    document.body.appendChild(a);
+                    a.click();
+                    document.body.removeChild(a);
+                }, index * 400); // 400ms delay avoids browser popup blocking
+            });
+        }
+
+        function resetUploadBatch() {
+            document.getElementById('uploadForm').reset();
+            document.getElementById('uploadFileName').textContent = 'Drag & drop donation Excel here';
+            document.getElementById('uploadArea').classList.remove('border-info');
+            document.getElementById('actionButtonsContainer').style.display = 'none';
+            document.getElementById('alertsContainer').innerHTML = '';
+            window.generatedPdfs = [];
+        }
+
+        // Helper UI alerts
+        function showUIAler(type, htmlContent) {
+            const container = document.getElementById('alertsContainer');
+            container.innerHTML = `
+                <div class="alert alert-custom alert-custom-${type === 'success' ? 'success' : 'danger'} alert-dismissible fade show" role="alert">
+                    <div>${htmlContent}</div>
+                    <button type="button" class="btn-close btn-close-white" data-bs-dismiss="alert" aria-label="Close"></button>
+                </div>
+            `;
+        }
+
+        function showSettingsAler(type, message) {
+            const container = document.getElementById('settingsAlertsContainer');
+            container.innerHTML = `
+                <div class="alert alert-custom alert-custom-${type === 'success' ? 'success' : 'danger'} py-2 px-3 small mt-2" role="alert">
+                    <i class="bi ${type === 'success' ? 'bi-check-circle-fill' : 'bi-exclamation-octagon-fill'} me-1"></i>${message}
+                </div>
+            `;
+            setTimeout(() => { container.innerHTML = ''; }, 4000);
+        }
+
+        // Utility debounce
+        function debounce(func, wait) {
+            let timeout;
+            return function(...args) {
+                clearTimeout(timeout);
+                timeout = setTimeout(() => func.apply(this, args), wait);
+            };
+        }
+    </script>
+</body>
+</html>

@@ -1,0 +1,95 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Donation Receipt - {{ receipt_number }}</title>
+    <!-- Link to static styling sheet -->
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css', _external=True) }}">
+</head>
+<body class="receipt-print-body">
+    <div class="receipt-container">
+        
+        <!-- Header bar -->
+        <div class="receipt-header-bar">
+            DONATION RECEIPT
+        </div>
+        
+        <!-- Top section with logo and foundation info -->
+        <div class="receipt-top-section">
+            <div class="receipt-logo-container">
+                <img class="receipt-logo" src="{{ url_for('static', filename='logo.png', _external=True) }}" alt="Logo">
+            </div>
+            <div class="receipt-info-container">
+                <div class="receipt-foundation-name">MAKKALIL ORUVAN FOUNDATION</div>
+                <div class="receipt-address">No.6, Jothi Nagar, 9th Street, West Tambaram, Chennai-600 045</div>
+                <div class="receipt-contact">Email: makkailioruvanfoundation@gmail.com</div>
+                <div class="receipt-contact">Phone: 6382560775</div>
+            </div>
+        </div>
+        
+        <!-- Details grid -->
+        <div class="receipt-grid">
+            <!-- Left Side Data Grid -->
+            <div class="receipt-grid-left">
+                <div class="receipt-row">
+                    <div class="receipt-label">Payer Name</div>
+                    <div class="receipt-value">{{ payer_name }}</div>
+                </div>
+                <div class="receipt-row">
+                    <div class="receipt-label">Receipt No</div>
+                    <div class="receipt-value">{{ receipt_number }}</div>
+                </div>
+                <div class="receipt-row">
+                    <div class="receipt-label">Date</div>
+                    <div class="receipt-value">{{ payment_date }}</div>
+                </div>
+                <div class="receipt-row">
+                    <div class="receipt-label">Pavement mode</div>
+                    <div class="receipt-value">Online</div>
+                </div>
+                <div class="receipt-row">
+                    <div class="receipt-label">Ref.Numder</div>
+                    <div class="receipt-value">{{ reference_number }}</div>
+                </div>
+            </div>
+            
+            <!-- Right Side (Receipt Issued + Amount) -->
+            <div class="receipt-grid-right">
+                <div class="receipt-row-issued">
+                    <div class="receipt-label-issued">Receipt Issued</div>
+                    <div class="receipt-value-issued">{{ receipt_date }}</div>
+                </div>
+                
+                <!-- Rupee badge -->
+                <div class="receipt-amount-badge-container">
+                    <div class="receipt-amount-symbol-box">₹</div>
+                    <div class="receipt-amount-value-box">{{ amount }}</div>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Thanks paragraph / narrative section -->
+        <div class="receipt-narrative">
+            Received with thanks from <span class="receipt-underline-field">Mr. {{ payer_name }}</span> the sum of INR <span class="receipt-underline-field">{{ amount_words }}</span>.
+            By <span class="receipt-underline-field">online</span> with payment reference no <span class="receipt-underline-field">{{ reference_number }}</span> for the <span class="receipt-underline-field">{{ event_name }}</span>.
+        </div>
+        
+        <hr class="receipt-divider">
+        
+        <!-- Footer / Signature section -->
+        <div class="receipt-footer">
+            <div class="receipt-received-by-label">Received By</div>
+            <div class="receipt-received-by-sub">For, Makkalil oruvan foundation</div>
+            
+            <div class="receipt-signature-container">
+                <img class="receipt-signature-img" src="{{ url_for('static', filename='signature.png', _external=True) }}" alt="Signature">
+            </div>
+            
+            <div class="receipt-signer-name">Rubeswaran A</div>
+            <div class="receipt-signer-title">Founder</div>
+        </div>
+        
+    </div>
+</body>
+</html>
