@@ -43,11 +43,24 @@ def generate_pdf_from_html(html_path, pdf_path):
     # Fallback to xhtml2pdf
     try:
         from xhtml2pdf import pisa
+        
+        def link_callback(uri, rel):
+            # Resolve static files to absolute local filesystem paths to avoid deadlocks from loopback HTTP requests
+            project_root = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+            static_dir = os.path.join(project_root, 'static')
+            
+            if '/static/' in uri:
+                relative_path = uri.split('/static/', 1)[1].split('?')[0]
+                local_path = os.path.normpath(os.path.join(static_dir, relative_path))
+                if os.path.exists(local_path):
+                    return local_path
+            return uri
+
         with open(html_path, 'r', encoding='utf-8') as f:
             html_content = f.read()
             
         with open(pdf_path, 'wb') as f:
-            pisa_status = pisa.CreatePDF(html_content, dest=f)
+            pisa_status = pisa.CreatePDF(html_content, dest=f, link_callback=link_callback)
             
         return not pisa_status.err
     except Exception as e:

@@ -327,7 +327,13 @@
                 progressBar.style.width = '100%';
                 progressPercent.textContent = '100%';
                 
-                const result = await response.json();
+                let result;
+                try {
+                    result = await response.json();
+                } catch (jsonErr) {
+                    const text = await response.text();
+                    throw new Error(`Server returned status ${response.status}: ${text.substring(0, 150)}`);
+                }
                 
                 if (response.ok) {
                     let summaryHtml = `<strong>Success!</strong> ${result.message}`;
@@ -359,7 +365,8 @@
                 }
             } catch (err) {
                 clearInterval(progressInterval);
-                showUIAler('danger', 'An error occurred during network submission.');
+                console.error("Upload error:", err);
+                showUIAler('danger', `An error occurred during submission: ${err.message || err}`);
                 document.getElementById('actionButtonsContainer').style.display = 'none';
             } finally {
                 setTimeout(() => {
