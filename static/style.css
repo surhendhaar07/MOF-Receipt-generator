@@ -1,5 +1,5 @@
 /* ==========================================
-   CSS DESIGN SYSTEM FOR MOF RECEIPT APP
+   CSS DESIGN SYSTEM FOR SEZHIYAM RECEIPT APP
    ========================================== */
 
 @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=Playfair+Display:ital,wght@0,600;1,600&display=swap');
@@ -98,7 +98,8 @@ body.dashboard-body {
     position: relative;
 }
 
-.upload-area:hover, .upload-area.dragover {
+.upload-area:hover,
+.upload-area.dragover {
     border-color: var(--accent-blue);
     background: rgba(15, 23, 42, 0.6);
 }
@@ -252,16 +253,16 @@ body.dashboard-body {
     border-bottom: 2px solid var(--dark-border) !important;
     color: var(--text-secondary);
     font-weight: 600;
-    padding: 14px 16px;
-    font-size: 0.9rem;
+    padding: 12px 10px;
+    font-size: 0.85rem;
     text-transform: uppercase;
     letter-spacing: 0.5px;
 }
 
 .custom-table td {
-    padding: 14px 16px;
+    padding: 12px 10px;
     border-bottom: 1px solid var(--dark-border);
-    font-size: 0.95rem;
+    font-size: 0.9rem;
     vertical-align: middle;
 }
 
@@ -304,13 +305,16 @@ body.dashboard-body {
     width: 8px;
     height: 8px;
 }
+
 ::-webkit-scrollbar-track {
     background: var(--dark-bg);
 }
+
 ::-webkit-scrollbar-thumb {
     background: rgba(255, 255, 255, 0.1);
     border-radius: 4px;
 }
+
 ::-webkit-scrollbar-thumb:hover {
     background: rgba(255, 255, 255, 0.2);
 }
@@ -333,7 +337,7 @@ body.dashboard-body {
     padding: 25px 35px;
     margin: 20px auto;
     border: 1px solid #eaeaea;
-    box-shadow: 0 4px 15px rgba(0,0,0,0.03);
+    box-shadow: 0 4px 15px rgba(0, 0, 0, 0.03);
     font-family: 'Inter', sans-serif;
     color: #111111;
     position: relative;
@@ -384,7 +388,8 @@ body.dashboard-body {
     letter-spacing: -0.2px;
 }
 
-.receipt-address, .receipt-contact {
+.receipt-address,
+.receipt-contact {
     font-size: 13px;
     color: #333333;
     margin-top: 3px;
@@ -554,7 +559,8 @@ body.dashboard-body {
     display: flex;
     flex-direction: column;
     align-items: flex-start;
-    padding-left: 150px; /* Aligns Received By under narrative */
+    padding-left: 150px;
+    /* Aligns Received By under narrative */
 }
 
 .receipt-received-by-label {
@@ -602,13 +608,13 @@ body.dashboard-body {
         size: A4 portrait;
         margin: 0;
     }
-    
+
     body.receipt-print-body {
         background-color: #ffffff;
         -webkit-print-color-adjust: exact;
         print-color-adjust: exact;
     }
-    
+
     .receipt-container {
         border: none;
         box-shadow: none;
@@ -618,4 +624,137 @@ body.dashboard-body {
         height: 100vh;
         box-sizing: border-box;
     }
+}
+
+/* ==========================================
+   3. LOGIN PAGE & DASHBOARD TABS STYLING
+   ========================================== */
+
+body.login-body {
+    background: linear-gradient(135deg, var(--dark-bg) 0%, #1e293b 100%);
+    color: var(--text-primary);
+    font-family: 'Inter', sans-serif;
+    min-height: 100vh;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    margin: 0;
+}
+
+.login-container {
+    width: 100%;
+    max-width: 420px;
+    padding: 20px;
+}
+
+.login-card {
+    padding: 35px 30px !important;
+}
+
+.login-logo-box {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 75px;
+    height: 75px;
+    background: rgba(56, 189, 248, 0.1);
+    border: 1px solid rgba(56, 189, 248, 0.25);
+    /* border-radius: 50%; */
+}
+
+.login-title {
+    font-weight: 800;
+    letter-spacing: -0.5px;
+    color: var(--text-primary);
+}
+
+.bg-dark-input {
+    background-color: #0f172a !important;
+    color: var(--text-primary) !important;
+}
+
+.bg-dark-input::placeholder {
+    color: #475569 !important;
+}
+
+.border-dark-border {
+    border-color: rgba(255, 255, 255, 0.08) !important;
+}
+
+.bg-dark-tip {
+    background-color: rgba(15, 23, 42, 0.6);
+}
+
+/* Custom Navigation Tabs styling */
+.custom-tabs {
+    border-bottom: 2px solid var(--dark-border);
+}
+
+.custom-tabs .nav-link {
+    color: var(--text-secondary);
+    border: none;
+    background: none;
+    font-weight: 600;
+    font-size: 0.95rem;
+    padding: 12px 20px;
+    transition: color 0.3s ease;
+    border-bottom: 3px solid transparent;
+}
+
+.custom-tabs .nav-link:hover {
+    color: var(--text-primary);
+    border-color: transparent;
+}
+
+.custom-tabs .nav-link.active {
+    color: var(--accent-blue);
+    background: none;
+    border: none;
+    border-bottom: 3px solid var(--accent-blue);
+}
+
+/* Log inner pills styling */
+.custom-pills .nav-link {
+    color: var(--text-secondary);
+    background: rgba(255, 255, 255, 0.04);
+    border: 1px solid var(--dark-border);
+    margin-right: 8px;
+    font-size: 0.85rem;
+    font-weight: 600;
+    padding: 6px 16px;
+    border-radius: 20px;
+}
+
+.custom-pills .nav-link.active {
+    background: var(--accent-gradient);
+    color: #0f172a;
+    border-color: transparent;
+}
+
+/* Small text sizes */
+.text-xs {
+    font-size: 0.75rem !important;
+}
+
+.x-small-text {
+    font-size: 0.7rem !important;
+}
+
+.text-secondary-50 {
+    color: rgba(148, 163, 184, 0.7) !important;
+}
+
+/* Custom modal dropdown adjustments */
+.dropdown-menu-dark {
+    background-color: #1e293b;
+}
+
+.dropdown-item {
+    font-size: 0.9rem;
+    font-weight: 500;
+}
+
+.dropdown-item:hover {
+    background-color: rgba(56, 189, 248, 0.1);
+    color: var(--accent-blue);
 }

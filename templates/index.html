@@ -1,291 +1,940 @@
 <!DOCTYPE html>
 <html lang="en">
+
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Donation Receipt Generator - Makkalil Oruvan Foundation</title>
+    <title>Dashboard - Sezhiyam Foundation</title>
     <!-- Bootstrap 5 CSS -->
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
     <!-- Bootstrap Icons -->
     <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css" rel="stylesheet">
     <!-- Google Fonts -->
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap"
+        rel="stylesheet">
     <!-- Custom stylesheet -->
     <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
 </head>
+
 <body class="dashboard-body">
+    {% set has_receipts = (session.get('role') == 'admin' or session.get('allow_receipts') == 1) %}
+    {% set has_ledger = (session.get('role') == 'admin' or session.get('allow_ledger') == 1) %}
+    {% set can_edit = (session.get('role') == 'admin' or session.get('can_edit') == 1) %}
 
     <div class="dashboard-container">
-        
+
         <!-- Header -->
-        <header class="dashboard-header">
-            <i class="bi bi-gift-fill text-info" style="font-size: 2.8rem;"></i>
-            <h1>Makkalil Oruvan Foundation</h1>
-            <p>Donation Receipt Generator Dashboard</p>
-        </header>
-        
-        <div class="row">
-            <!-- Left Column: Upload & Actions -->
-            <div class="col-lg-7 col-md-12">
-                <div class="glass-card">
-                    <h2 class="section-title">Upload & Generate</h2>
-                    
-                    <form id="uploadForm">
-                        <div class="upload-area" id="uploadArea">
-                            <i class="bi bi-file-earmark-excel-fill upload-icon"></i>
-                            <div class="upload-text" id="uploadFileName">Drag & drop donation Excel here</div>
-                            <div class="upload-subtext">Supports .xlsx and .xls spreadsheets</div>
-                            <input type="file" name="file" id="excelFile" class="file-input" accept=".xlsx, .xls">
-                        </div>
-                        
-                        <div class="d-grid gap-2 mt-3">
-                            <button type="submit" class="btn btn-primary-gradient py-2">
-                                <i class="bi bi-gear-fill me-2"></i>Generate Receipts
+        <header
+            class="dashboard-header d-flex flex-wrap align-items-center justify-content-between pb-3 border-bottom border-secondary-subtle mb-4">
+            <div class="d-flex align-items-center gap-3">
+                <img src="{{ url_for('static', filename='logo_new_1.png') }}" alt="Logo"
+                    style="height: 64px; object-fit: contain;">
+                <div class="text-start">
+                    <h1 class="h3 mb-1 text-white fw-bold">Sezhiyam Foundation</h1>
+                    <p class="text-secondary small mb-0">Donation & Account Dashboard</p>
+                </div>
+            </div>
+
+            <!-- User Status & Actions -->
+            <div class="d-flex align-items-center gap-3 text-end">
+                <div>
+                    <div class="small text-secondary fw-semibold">Logged in as</div>
+                    <span class="text-info font-monospace small"><i class="bi bi-person-fill me-1"></i>{{
+                        session.get('username') }}</span>
+                    <span
+                        class="badge {{ 'bg-info text-dark' if session.get('role') == 'admin' else 'bg-secondary' }} ms-1 text-xs">{{
+                        session.get('role')|upper }}</span>
+                </div>
+                <div class="dropdown">
+                    <button class="btn btn-secondary-outline dropdown-toggle py-1.5 px-3" type="button"
+                        data-bs-toggle="dropdown" aria-expanded="false">
+                        <i class="bi bi-gear-fill"></i> Options
+                    </button>
+                    <ul class="dropdown-menu dropdown-menu-dark dropdown-menu-end border-dark-border">
+                        <li>
+                            <button type="button" class="dropdown-item py-2" data-bs-toggle="modal"
+                                data-bs-target="#changePasswordModal">
+                                <i class="bi bi-key-fill me-2"></i> Change Password
                             </button>
-                        </div>
-                    </form>
-                    
-                    <!-- Progress Container -->
-                    <div class="progress-container" id="progressBarContainer">
-                        <div class="d-flex justify-content-between mb-1">
-                            <span class="small text-secondary">Processing receipts...</span>
-                            <span class="small text-info fw-bold" id="progressPercent">0%</span>
-                        </div>
-                        <div class="progress">
-                            <div class="progress-bar progress-bar-striped progress-bar-animated" role="progressbar" id="progressBar" style="width: 0%"></div>
+                        </li>
+                        <li>
+                            <hr class="dropdown-divider border-dark-border">
+                        </li>
+                        <li>
+                            <a class="dropdown-item text-danger py-2" href="{{ url_for('main.logout') }}">
+                                <i class="bi bi-box-arrow-right me-2"></i> Logout
+                            </a>
+                        </li>
+                    </ul>
+                </div>
+            </div>
+        </header>
+
+        <!-- Navigation Tabs -->
+        <ul class="nav nav-tabs custom-tabs mb-4" id="dashboardTabs" role="tablist">
+            {% if has_receipts %}
+            <li class="nav-item" role="presentation">
+                <button class="nav-link active" id="receipts-tab" data-bs-toggle="tab"
+                    data-bs-target="#receipts-content" type="button" role="tab" aria-controls="receipts-content"
+                    aria-selected="true">
+                    <i class="bi bi-file-earmark-pdf-fill me-1"></i> Donation Receipts
+                </button>
+            </li>
+            {% endif %}
+            {% if has_ledger %}
+            <li class="nav-item" role="presentation">
+                <button class="nav-link {% if not has_receipts %}active{% endif %}" id="ledger-tab" data-bs-toggle="tab"
+                    data-bs-target="#ledger-content" type="button" role="tab" aria-controls="ledger-content"
+                    aria-selected="{% if not has_receipts %}true{% else %}false{% endif %}" onclick="loadLedger()">
+                    <i class="bi bi-bank2 me-1"></i> Account Entry Ledger
+                </button>
+            </li>
+            {% endif %}
+            {% if session.get('role') == 'admin' %}
+            <li class="nav-item" role="presentation">
+                <button class="nav-link" id="admin-tab" data-bs-toggle="tab" data-bs-target="#admin-content"
+                    type="button" role="tab" aria-controls="admin-content" aria-selected="false"
+                    onclick="loadAdminPanel()">
+                    <i class="bi bi-sliders me-1"></i> Admin Panel
+                </button>
+            </li>
+            {% endif %}
+        </ul>
+
+        <!-- Tab Contents -->
+        <div class="tab-content" id="dashboardTabsContent">
+
+            {% if has_receipts %}
+            <!-- Tab 1: Receipts -->
+            <div class="tab-pane fade show active" id="receipts-content" role="tabpanel" aria-labelledby="receipts-tab">
+                <div class="row">
+                    <!-- Left Column: Upload & Actions -->
+                    <div class="col-lg-7 col-md-12">
+                        <div class="glass-card">
+                            <div class="d-flex justify-content-between align-items-center mb-3">
+                                <h2 class="section-title mb-0">Upload & Generate</h2>
+                                <a href="{{ url_for('static', filename='donation_template.xlsx') }}" class="btn btn-outline-info btn-sm" download>
+                                    <i class="bi bi-download me-1"></i>Download Template
+                                </a>
+                            </div>
+
+                            {% if can_edit %}
+                            <form id="uploadForm">
+                                <div class="upload-area" id="uploadArea">
+                                    <i class="bi bi-file-earmark-excel-fill upload-icon"></i>
+                                    <div class="upload-text" id="uploadFileName">Drag & drop donation Excel here</div>
+                                    <div class="upload-subtext">Supports .xlsx and .xls spreadsheets</div>
+                                    <input type="file" name="file" id="excelFile" class="file-input"
+                                        accept=".xlsx, .xls">
+                                </div>
+
+                                <div class="d-grid gap-2 mt-3">
+                                    <button type="submit" class="btn btn-primary-gradient py-2 fw-semibold">
+                                        <i class="bi bi-gear-fill me-2"></i>Generate Receipts
+                                    </button>
+                                </div>
+                            </form>
+                            {% else %}
+                            <div class="upload-area cursor-not-allowed border-secondary"
+                                style="opacity: 0.6; pointer-events: none;">
+                                <i class="bi bi-shield-lock-fill text-warning upload-icon"></i>
+                                <div class="upload-text text-secondary-50">Upload Locked (Read-Only)</div>
+                                <div class="upload-subtext text-secondary-50">Contact admin for edit permissions</div>
+                            </div>
+                            {% endif %}
+
+                            <!-- Progress Container -->
+                            <div class="progress-container" id="progressBarContainer">
+                                <div class="d-flex justify-content-between mb-1">
+                                    <span class="small text-secondary">Processing receipts...</span>
+                                    <span class="small text-info fw-bold" id="progressPercent">0%</span>
+                                </div>
+                                <div class="progress">
+                                    <div class="progress-bar progress-bar-striped progress-bar-animated"
+                                        role="progressbar" id="progressBar" style="width: 0%"></div>
+                                </div>
+                            </div>
+
+                            <!-- Alerts Container -->
+                            <div id="alertsContainer" class="mt-3"></div>
+
+                            <!-- Batch Action Buttons Container -->
+                            <div class="mt-4 pt-3 border-top border-secondary-subtle" id="actionButtonsContainer"
+                                style="display: none;">
+                                <h4 class="small text-secondary mb-3 fw-bold">BATCH DOWNLOADS</h4>
+                                <div class="d-flex flex-wrap gap-2">
+                                    <a id="downloadZipBtn" href="#" class="btn btn-primary-gradient px-3 py-2">
+                                        <i class="bi bi-file-earmark-zip-fill me-2"></i>Download ZIP
+                                    </a>
+                                    <button type="button" onclick="downloadAllPDFs()"
+                                        class="btn btn-secondary-outline px-3 py-2">
+                                        <i class="bi bi-download me-2"></i>Download All PDFs
+                                    </button>
+                                    <button type="button" onclick="resetUploadBatch()"
+                                        class="btn btn-secondary-outline px-3 py-2 text-warning border-warning-subtle">
+                                        <i class="bi bi-arrow-counterclockwise me-2"></i>Reset Upload
+                                    </button>
+                                </div>
+                            </div>
                         </div>
                     </div>
-                    
-                    <!-- Alerts Container -->
-                    <div id="alertsContainer" class="mt-3"></div>
-                    
-                    <!-- Batch Action Buttons Container -->
-                    <div class="mt-4 pt-3 border-top border-secondary-subtle" id="actionButtonsContainer" style="display: none;">
-                        <h4 class="small text-secondary mb-3">BATCH DOWNLOADS</h4>
-                        <div class="d-flex flex-wrap gap-2">
-                            <a id="downloadZipBtn" href="#" class="btn btn-primary-gradient px-3 py-2">
-                                <i class="bi bi-file-earmark-zip-fill me-2"></i>Download ZIP
-                            </a>
-                            <button type="button" onclick="downloadAllPDFs()" class="btn btn-secondary-outline px-3 py-2">
-                                <i class="bi bi-download me-2"></i>Download All PDFs
-                            </button>
-                            <button type="button" onclick="resetUploadBatch()" class="btn btn-secondary-outline px-3 py-2 text-warning border-warning-subtle">
-                                <i class="bi bi-arrow-counterclockwise me-2"></i>Reset Upload
-                            </button>
+
+                    <!-- Right Column: Tracking & Basic Settings -->
+                    <div class="col-lg-5 col-md-12">
+                        <!-- Receipt Counter Info Card -->
+                        <div class="glass-card mb-4">
+                            <h2 class="section-title">Receipt Tracking</h2>
+                            <div class="mb-3">
+                                <div class="mb-3">
+                                    <div class="text-secondary small">LAST GENERATED NUMBER</div>
+                                    <div class="fs-2 fw-bold text-info" id="lastCounterLabel">SFDR-{{ current_year
+                                        }}-000</div>
+                                </div>
+                                <div>
+                                    <div class="text-secondary small">TODAY'S SYSTEM DATE</div>
+                                    <div class="fs-5 fw-semibold" id="systemDateLabel">00/00/2026</div>
+                                </div>
+                            </div>
                         </div>
+
+                        <!-- Simple Receipt Settings Card -->
+                        <div class="glass-card">
+                            <h2 class="section-title">Receipt Settings</h2>
+                            {% if can_edit %}
+                            <p class="small text-secondary mb-3">
+                                Re-number serial counters. Resetting reverts to 0 (next receipt starts at
+                                <strong>SFDR-{{ current_year }}-001</strong>).
+                            </p>
+                            <form id="resetCounterForm">
+                                <div class="mb-3">
+                                    <label for="customStartNumber"
+                                        class="form-label text-secondary small fw-semibold">CUSTOM COUNTER START
+                                        (Optional)</label>
+                                    <div class="input-group">
+                                        <span class="input-group-text bg-dark border-secondary text-secondary">SFDR-{{
+                                            current_year }}-</span>
+                                        <input type="number" id="customStartNumber" min="0"
+                                            class="form-control search-control text-white" placeholder="0">
+                                    </div>
+                                    <div class="form-text text-secondary-50 small mt-1">E.g. input 10 to make the next
+                                        receipt generated be SFDR-{{ current_year }}-011.</div>
+                                </div>
+                                <button type="submit" class="btn btn-reset-danger w-100 py-2">
+                                    <i class="bi bi-exclamation-triangle-fill me-2"></i>Reset Receipt Counter
+                                </button>
+                            </form>
+
+                            {% if session.get('role') == 'admin' %}
+                            <hr class="border-secondary my-3">
+                            <p class="small text-secondary mb-2">
+                                Clear all historical generated receipt data from the database and remove all generated
+                                PDF files from disk.
+                            </p>
+                            <button type="button" onclick="clearHistoryLogs()" class="btn btn-reset-danger w-100 py-2">
+                                <i class="bi bi-trash3-fill me-2"></i>Clear All History Logs
+                            </button>
+                            {% endif %}
+                            {% else %}
+                            <div class="text-center py-4">
+                                <i class="bi bi-lock-fill text-warning mb-2" style="font-size: 2.2rem;"></i>
+                                <div class="small text-secondary fw-semibold">Settings Locked</div>
+                                <div class="x-small-text text-secondary mt-1">Your account has read-only access.</div>
+                            </div>
+                            {% endif %}
+
+                            <div id="settingsAlertsContainer" class="mt-2"></div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Bottom: History & Search Table -->
+                <div class="glass-card mt-4">
+                    <div class="d-flex flex-wrap justify-content-between align-items-center mb-3 gap-2">
+                        <h2 class="section-title mb-0">Generated Receipts History</h2>
+                        <div class="col-md-5 col-sm-12">
+                            <div class="input-group">
+                                <span class="input-group-text bg-dark border-secondary text-secondary"><i
+                                        class="bi bi-search"></i></span>
+                                <input type="text" id="historySearch" class="form-control search-control"
+                                    placeholder="Search by Payer, Receipt No, Ref No...">
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="table-responsive">
+                        <table class="table custom-table table-dark table-striped mb-0">
+                            <thead>
+                                <tr>
+                                    <th>Receipt No</th>
+                                    <th>Payer Name</th>
+                                    <th>Amount (₹)</th>
+                                    <th>Payment Date</th>
+                                    <th>Receipt Date</th>
+                                    <th>Reference Number</th>
+                                    <th class="text-center">Actions</th>
+                                </tr>
+                            </thead>
+                            <tbody id="historyTableBody">
+                                <!-- Populated dynamically -->
+                            </tbody>
+                        </table>
                     </div>
                 </div>
             </div>
-            
-            <!-- Right Column: Settings & Summary -->
-            <div class="col-lg-5 col-md-12">
-                <!-- Receipt Counter Info Card -->
-                <div class="glass-card mb-4">
-                    <h2 class="section-title">Receipt Tracking</h2>
-                    <div class="d-flex align-items-center justify-content-between mb-3">
-                        <div>
-                            <div class="text-secondary small">LAST GENERATED NUMBER</div>
-                            <div class="fs-2 fw-bold text-info" id="lastCounterLabel">MOFDR000</div>
+            {% endif %}
+
+            {% if has_ledger %}
+            <!-- Tab 2: Accounts Ledger -->
+            <div class="tab-pane fade {% if not has_receipts %}show active{% endif %}" id="ledger-content"
+                role="tabpanel" aria-labelledby="ledger-tab">
+
+                <!-- Balance Cards Row -->
+                <div class="row mb-4">
+                    <div class="col-md-4">
+                        <div class="glass-card text-center py-4 mb-3 mb-md-0">
+                            <div class="text-secondary small fw-semibold mb-1">CURRENT BALANCE</div>
+                            <div class="fs-1 fw-bold text-success" id="ledgerBalance">₹0.00</div>
                         </div>
-                        <div class="text-end">
-                            <div class="text-secondary small">TODAY'S SYSTEM DATE</div>
-                            <div class="fs-5 fw-semibold" id="systemDateLabel">07/07/2026</div>
+                    </div>
+                    <div class="col-md-4">
+                        <div class="glass-card text-center py-4 mb-3 mb-md-0">
+                            <div class="text-secondary small fw-semibold mb-1">TOTAL INCOME (CREDITS)</div>
+                            <div class="fs-2 fw-bold text-info" id="ledgerTotalAdded">₹0.00</div>
+                        </div>
+                    </div>
+                    <div class="col-md-4">
+                        <div class="glass-card text-center py-4 mb-0">
+                            <div class="text-secondary small fw-semibold mb-1">TOTAL EXPENSE (DEBITS)</div>
+                            <div class="fs-2 fw-bold text-danger" id="ledgerTotalRemoved">₹0.00</div>
                         </div>
                     </div>
                 </div>
-                
-                <!-- Admin Settings Card -->
-                <div class="glass-card">
-                    <h2 class="section-title">Admin Settings</h2>
-                    <p class="small text-secondary mb-3">
-                        Manage donation counter numbering. Resetting will revert counter back to 0 (next receipt generated will start at <strong>MOFDR001</strong>).
-                    </p>
-                    <form id="resetCounterForm">
-                        <div class="mb-3">
-                            <label for="customStartNumber" class="form-label text-secondary small">CUSTOM COUNTER START (Optional)</label>
-                            <div class="input-group">
-                                <span class="input-group-text bg-dark border-secondary text-secondary">MOFDR</span>
-                                <input type="number" id="customStartNumber" min="0" class="form-control search-control" placeholder="0">
-                            </div>
-                            <div class="form-text text-secondary-50 small mt-1">E.g., input 100 to make the next receipt generated be MOFDR101.</div>
+
+                <!-- Ledger actions panel -->
+                <div class="glass-card mb-4 py-3">
+                    <div class="d-flex flex-wrap align-items-center justify-content-between gap-3">
+                        <div class="text-start">
+                            <h3 class="section-title mb-1">Funds Ledger</h3>
+                            <p class="small text-secondary mb-0">Manage cash books, add incoming deposits, and record
+                                organizational debit entries.</p>
                         </div>
-                        <button type="submit" class="btn btn-reset-danger w-100">
-                            <i class="bi bi-exclamation-triangle-fill me-2"></i>Reset Receipt Counter
+                        {% if can_edit %}
+                        <div class="d-flex gap-2">
+                            <button type="button" class="btn btn-primary-gradient px-4 py-2 fw-bold"
+                                data-bs-toggle="modal" data-bs-target="#transactionModal"
+                                onclick="setTxModalType('add')">
+                                <i class="bi bi-plus-circle me-1"></i> Add Funds
+                            </button>
+                            <button type="button"
+                                class="btn btn-secondary-outline px-4 py-2 text-danger border-danger-subtle fw-bold"
+                                data-bs-toggle="modal" data-bs-target="#transactionModal"
+                                onclick="setTxModalType('remove')">
+                                <i class="bi bi-dash-circle me-1"></i> Remove Funds
+                            </button>
+                        </div>
+                        {% else %}
+                        <span
+                            class="badge bg-secondary-subtle border border-secondary text-secondary px-3 py-2 fw-bold"><i
+                                class="bi bi-lock-fill me-1"></i> Read-Only Account</span>
+                        {% endif %}
+                    </div>
+                </div>
+
+                <!-- Ledger filters panel -->
+                <div class="glass-card mb-4">
+                    <h3 class="section-title">Ledger Query Filters</h3>
+                    <form id="ledgerFilterForm" onsubmit="event.preventDefault(); loadLedgerTransactions();">
+                        <div class="row g-3 mb-3">
+                            <div class="col-md-3 col-sm-12">
+                                <label class="form-label small text-secondary fw-semibold">Keywords</label>
+                                <input type="text" id="filterSearch" class="form-control search-control text-white"
+                                    placeholder="Remarks, recorded by...">
+                            </div>
+                            <div class="col-md-3 col-sm-12">
+                                <label class="form-label small text-secondary fw-semibold">Event Name</label>
+                                <input type="text" id="filterEvent" class="form-control search-control text-white"
+                                    placeholder="Medical, General, Event Name...">
+                            </div>
+                            <div class="col-md-3 col-sm-12">
+                                <label class="form-label small text-secondary fw-semibold">Person Name</label>
+                                <input type="text" id="filterPerson" class="form-control search-control text-white"
+                                    placeholder="Donor, Vendor, Payer Name...">
+                            </div>
+                            <div class="col-md-3 col-sm-12">
+                                <label class="form-label small text-secondary fw-semibold">Trans. Type</label>
+                                <select id="filterType" class="form-select search-control text-white">
+                                    <option value="all">All Types</option>
+                                    <option value="add">Credits (+)</option>
+                                    <option value="remove">Debits (-)</option>
+                                </select>
+                            </div>
+                        </div>
+                        <div class="row g-3 align-items-end">
+                            <div class="col-md-4 col-sm-6">
+                                <label class="form-label small text-secondary fw-semibold">Start Date</label>
+                                <input type="date" id="filterStartDate" class="form-control search-control text-white">
+                            </div>
+                            <div class="col-md-4 col-sm-6">
+                                <label class="form-label small text-secondary fw-semibold">End Date</label>
+                                <input type="date" id="filterEndDate" class="form-control search-control text-white">
+                            </div>
+                            <div class="col-md-4 col-sm-12 d-flex gap-2">
+                                <button type="submit" class="btn btn-primary-gradient w-100 py-2.5 fw-semibold">
+                                    <i class="bi bi-filter-right me-1"></i> Apply Filters
+                                </button>
+                                <button type="button" class="btn btn-secondary-outline py-2.5 px-3"
+                                    onclick="resetLedgerFilters()">
+                                    <i class="bi bi-x-lg"></i>
+                                </button>
+                            </div>
+                        </div>
+                    </form>
+                </div>
+
+                <!-- Ledger Table Card -->
+                <div class="glass-card">
+                    <div class="d-flex justify-content-between align-items-center mb-3">
+                        <h3 class="section-title mb-0">Ledger Entries Log</h3>
+                        <button type="button" class="btn btn-secondary-outline btn-sm px-3" onclick="downloadLedgerExcel()">
+                            <i class="bi bi-file-earmark-excel-fill text-success me-1"></i> Download Excel
+                        </button>
+                    </div>
+                    <div class="table-responsive">
+                        <table class="table custom-table table-dark table-striped mb-0">
+                            <thead>
+                                <tr>
+                                    <th>Date</th>
+                                    <th>Type</th>
+                                    <th>Amount (₹)</th>
+                                    <th>Event/Purpose</th>
+                                    <th>Person Name</th>
+                                    <th>Payment Details</th>
+                                    <th>Remarks</th>
+                                    <th>Recorded By</th>
+                                    <th class="text-center">Action</th>
+                                </tr>
+                            </thead>
+                            <tbody id="ledgerTableBody">
+                                <!-- Populated dynamically -->
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+
+            </div>
+            {% endif %}
+
+            {% if not has_receipts and not has_ledger %}
+            <!-- Tab: Access Denied Pane -->
+            <div class="glass-card text-center py-5 mb-0">
+                <i class="bi bi-shield-slash-fill text-danger mb-3" style="font-size: 3rem;"></i>
+                <h3 class="text-white fw-bold">Access Denied</h3>
+                <p class="text-secondary">You do not have access to any modules in this application. Please contact an
+                    administrator.</p>
+            </div>
+            {% endif %}
+
+            <!-- Tab 3: Admin Panel -->
+            {% if session.get('role') == 'admin' %}
+            <div class="tab-pane fade" id="admin-content" role="tabpanel" aria-labelledby="admin-tab">
+                <!-- Section 1: Add User Account -->
+                <div class="glass-card mb-4">
+                    <h3 class="section-title">Add User Account</h3>
+                    <div id="createUserErrorAlert" class="alert alert-danger py-2 px-3 small border-0 mb-3"
+                        style="display: none;"></div>
+                    <div id="createUserSuccessAlert" class="alert alert-success py-2 px-3 small border-0 mb-3"
+                        style="display: none;"></div>
+
+                    <form id="createUserForm" onsubmit="submitCreateUser(event)">
+                        <div class="mb-3">
+                            <label for="newUsername"
+                                class="form-label text-secondary small fw-semibold">Username</label>
+                            <input type="text" class="form-control bg-dark-input border-dark-border text-white"
+                                id="newUsername" required placeholder="Min 3 chars">
+                        </div>
+                        <div class="mb-3">
+                            <label for="newUserPassword"
+                                class="form-label text-secondary small fw-semibold">Password</label>
+                            <input type="password" class="form-control bg-dark-input border-dark-border text-white"
+                                id="newUserPassword" required placeholder="Min 6 chars">
+                        </div>
+                        <div class="mb-3">
+                            <label for="newUserRole" class="form-label text-secondary small fw-semibold">Role</label>
+                            <select class="form-select bg-dark-input border-dark-border text-white" id="newUserRole">
+                                <option value="user">Staff / User</option>
+                                <option value="admin">Administrator</option>
+                            </select>
+                        </div>
+                        <div class="mb-3" id="permissionsGroup">
+                            <label class="form-label text-secondary small fw-semibold d-block">Account
+                                Permissions</label>
+                            <div class="form-check form-check-inline mt-1">
+                                <input class="form-check-input bg-dark border-dark-border" type="checkbox"
+                                    id="permReceipts" checked>
+                                <label class="form-check-label text-secondary small" for="permReceipts">Receipts
+                                    Tab</label>
+                            </div>
+                            <div class="form-check form-check-inline">
+                                <input class="form-check-input bg-dark border-dark-border" type="checkbox"
+                                    id="permLedger" checked>
+                                <label class="form-check-label text-secondary small" for="permLedger">Ledger Tab</label>
+                            </div>
+                            <div class="form-check form-check-inline">
+                                <input class="form-check-input bg-dark border-dark-border" type="checkbox" id="permEdit"
+                                    checked>
+                                <label class="form-check-label text-secondary small" for="permEdit">Allow Edit</label>
+                            </div>
+                        </div>
+                        <button type="submit" class="btn btn-primary-gradient w-100 py-2 fw-semibold">
+                            <i class="bi bi-person-plus-fill me-1"></i> Register User Account
                         </button>
                     </form>
-                    <hr class="border-secondary my-3">
-                    <p class="small text-secondary mb-2">
-                        Permanently clear all historical logs from the database and remove all generated PDF files from disk.
-                    </p>
-                    <button type="button" onclick="clearHistoryLogs()" class="btn btn-reset-danger w-100">
-                        <i class="bi bi-trash3-fill me-2"></i>Clear All History Logs
-                    </button>
-                    <div id="settingsAlertsContainer" class="mt-2"></div>
                 </div>
-            </div>
-        </div>
-        
-        <!-- Bottom: History & Search Table -->
-        <div class="glass-card mt-4">
-            <div class="d-flex flex-wrap justify-content-between align-items-center mb-3 gap-2">
-                <h2 class="section-title mb-0">Generated Receipts History</h2>
-                <div class="col-md-5 col-sm-12">
-                    <div class="input-group">
-                        <span class="input-group-text bg-dark border-secondary text-secondary"><i class="bi bi-search"></i></span>
-                        <input type="text" id="historySearch" class="form-control search-control" placeholder="Search by Payer Name, Receipt No, Ref No, Date...">
+
+                <!-- Section 2: Active User Accounts -->
+                <div class="glass-card mb-4">
+                    <h3 class="section-title">Active User Accounts</h3>
+                    <div class="table-responsive">
+                        <table class="table custom-table table-dark table-striped mb-0 text-sm">
+                            <thead>
+                                <tr>
+                                    <th>User</th>
+                                    <th>Role</th>
+                                    <th class="text-center">Receipts</th>
+                                    <th class="text-center">Ledger</th>
+                                    <th class="text-center">Edit</th>
+                                    <th>Created At</th>
+                                    <th>Action</th>
+                                </tr>
+                            </thead>
+                            <tbody id="usersTableBody">
+                                <!-- Populated dynamically -->
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+
+                <!-- Section 3: System Activity Logs -->
+                <div class="glass-card">
+                    <div class="d-flex justify-content-between align-items-center mb-3">
+                        <h3 class="section-title mb-0">System Activity Logs</h3>
+                        <button type="button" class="btn btn-secondary-outline btn-sm py-1 px-3" onclick="loadLogs()">
+                            <i class="bi bi-arrow-clockwise"></i> Refresh
+                        </button>
+                    </div>
+
+                    <!-- Logs Inner Tabs -->
+                    <ul class="nav nav-pills custom-pills mb-3" id="logPills" role="tablist">
+                        <li class="nav-item" role="presentation">
+                            <button class="nav-link active btn-sm" id="audit-pill" data-bs-toggle="pill"
+                                data-bs-target="#audit-logs-tab" type="button" role="tab" aria-controls="audit-logs-tab"
+                                aria-selected="true">
+                                <i class="bi bi-clipboard2-data-fill me-1"></i> Audit Trails
+                            </button>
+                        </li>
+                        <li class="nav-item" role="presentation">
+                            <button class="nav-link btn-sm" id="access-pill" data-bs-toggle="pill"
+                                data-bs-target="#access-logs-tab" type="button" role="tab"
+                                aria-controls="access-logs-tab" aria-selected="false">
+                                <i class="bi bi-shield-check me-1"></i> Access Logs
+                            </button>
+                        </li>
+                    </ul>
+
+                    <div class="tab-content" id="logPillsContent">
+                        <!-- Audit Logs tab -->
+                        <div class="tab-pane fade show active" id="audit-logs-tab" role="tabpanel"
+                            aria-labelledby="audit-pill">
+                            <div class="table-responsive" style="max-height: 480px; overflow-y: auto;">
+                                <table class="table custom-table table-dark table-striped table-sm mb-0 text-sm">
+                                    <thead>
+                                        <tr>
+                                            <th>User</th>
+                                            <th>Action</th>
+                                            <th>Description</th>
+                                            <th>Timestamp</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody id="auditLogsTableBody">
+                                        <!-- Populated dynamically -->
+                                    </tbody>
+                                </table>
+                            </div>
+                        </div>
+
+                        <!-- Access Logs tab -->
+                        <div class="tab-pane fade" id="access-logs-tab" role="tabpanel" aria-labelledby="access-pill">
+                            <div class="table-responsive" style="max-height: 480px; overflow-y: auto;">
+                                <table class="table custom-table table-dark table-striped table-sm mb-0 text-sm">
+                                    <thead>
+                                        <tr>
+                                            <th>Status</th>
+                                            <th>User</th>
+                                            <th>IP Address</th>
+                                            <th>Timestamp</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody id="accessLogsTableBody">
+                                        <!-- Populated dynamically -->
+                                    </tbody>
+                                </table>
+                            </div>
+                        </div>
                     </div>
                 </div>
             </div>
-            
-            <div class="table-responsive" style="max-height: 400px; overflow-y: auto;">
-                <table class="table custom-table table-dark table-striped mb-0">
-                    <thead>
-                        <tr>
-                            <th>Receipt No</th>
-                            <th>Payer Name</th>
-                            <th>Amount (₹)</th>
-                            <th>Payment Date</th>
-                            <th>Receipt Date</th>
-                            <th>Reference Number</th>
-                            <th class="text-center">Actions</th>
-                        </tr>
-                    </thead>
-                    <tbody id="historyTableBody">
-                        <tr>
-                            <td colspan="7" class="text-center text-secondary py-4">Loading receipts history...</td>
-                        </tr>
-                    </tbody>
-                </table>
-            </div>
+            {% endif %}
+
         </div>
-        
     </div>
 
-    <!-- Bootstrap 5 JS Bundle -->
+    <!-- Modal: Add/Remove Transaction -->
+    <div class="modal fade" id="transactionModal" tabindex="-1" aria-labelledby="transactionModalLabel"
+        aria-hidden="true">
+        <div class="modal-dialog modal-dialog-centered">
+            <div class="modal-content bg-dark border border-dark-border text-white rounded-4">
+                <div class="modal-header border-bottom border-dark-border">
+                    <h5 class="modal-title fw-bold" id="transactionModalLabel">Record Entry</h5>
+                    <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"
+                        aria-label="Close"></button>
+                </div>
+                <form id="transactionForm" onsubmit="submitTransaction(event)">
+                    <div class="modal-body">
+                        <div id="txErrorAlert" class="alert alert-danger py-2 px-3 small border-0 mb-3"
+                            style="display: none;"></div>
+
+                        <div class="mb-3">
+                            <label for="txAmount" class="form-label text-secondary small fw-semibold">Amount (₹)
+                                *</label>
+                            <input type="number" step="any" min="0.01"
+                                class="form-control bg-dark-input border-dark-border text-white" id="txAmount" required
+                                placeholder="0.00">
+                        </div>
+                        <div class="mb-3">
+                            <label for="txDate" class="form-label text-secondary small fw-semibold">Date *</label>
+                            <input type="date" class="form-control bg-dark-input border-dark-border text-white"
+                                id="txDate" required>
+                        </div>
+                        <div class="mb-3">
+                            <label for="txEventName" class="form-label text-secondary small fw-semibold">Event / Purpose
+                                *</label>
+                            <input type="text" class="form-control bg-dark-input border-dark-border text-white"
+                                id="txEventName" required placeholder="E.g., Medical relief, general funding">
+                        </div>
+                        <div class="mb-3">
+                            <label for="txPersonName" class="form-label text-secondary small fw-semibold">Name of Person
+                                (Donor/Recipient) *</label>
+                            <input type="text" class="form-control bg-dark-input border-dark-border text-white"
+                                id="txPersonName" required placeholder="Name of payer or payee">
+                        </div>
+                        <div class="mb-3">
+                            <label for="txPaymentMethod" class="form-label text-secondary small fw-semibold">Payment Method *</label>
+                            <select class="form-select bg-dark-input border-dark-border text-white" id="txPaymentMethod" required>
+                                <option value="cash" selected>Cash</option>
+                                <option value="upi">UPI</option>
+                                <option value="bank_transfer">Bank Transfer</option>
+                            </select>
+                        </div>
+                        <div class="mb-3" id="txTransactionNumberContainer" style="display: none;">
+                            <label for="txTransactionNumber" class="form-label text-secondary small fw-semibold">Transaction Number / Reference *</label>
+                            <input type="text" class="form-control bg-dark-input border-dark-border text-white"
+                                id="txTransactionNumber" placeholder="Enter transaction reference ID">
+                        </div>
+                        <div class="mb-3">
+                            <label for="txRemarks" class="form-label text-secondary small fw-semibold">Remarks /
+                                Detailed Description</label>
+                            <textarea class="form-control bg-dark-input border-dark-border text-white" id="txRemarks"
+                                rows="2" placeholder="Reference, invoice details, etc."></textarea>
+                        </div>
+                        {% if session.get('role') == 'admin' %}
+                        <div class="form-check mb-3" id="txGenerateReceiptContainer" style="display: none;">
+                            <input class="form-check-input bg-dark border-dark-border" type="checkbox" id="txGenerateReceipt">
+                            <label class="form-check-label text-info small fw-semibold" for="txGenerateReceipt">
+                                <i class="bi bi-file-earmark-pdf-fill me-1"></i> Generate Donation Receipt
+                            </label>
+                        </div>
+                        {% endif %}
+                    </div>
+                    <div class="modal-footer border-top border-dark-border">
+                        <button type="button" class="btn btn-secondary-outline px-3"
+                            data-bs-dismiss="modal">Cancel</button>
+                        <button type="submit" class="btn btn-primary-gradient px-4" id="submitTxBtn">Record
+                            Entry</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <!-- Modal: Change Password -->
+    <div class="modal fade" id="changePasswordModal" tabindex="-1" aria-labelledby="changePasswordModalLabel"
+        aria-hidden="true">
+        <div class="modal-dialog modal-dialog-centered">
+            <div class="modal-content bg-dark border border-dark-border text-white rounded-4">
+                <div class="modal-header border-bottom border-dark-border">
+                    <h5 class="modal-title fw-bold" id="changePasswordModalLabel"><i
+                            class="bi bi-key-fill text-info me-1"></i> Change Password</h5>
+                    <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"
+                        aria-label="Close"></button>
+                </div>
+                <form id="changePasswordForm" onsubmit="submitChangePassword(event)">
+                    <div class="modal-body">
+                        <div id="changePasswordErrorAlert" class="alert alert-danger py-2 px-3 small border-0 mb-3"
+                            style="display: none;"></div>
+                        <div id="changePasswordSuccessAlert" class="alert alert-success py-2 px-3 small border-0 mb-3"
+                            style="display: none;"></div>
+
+                        <div class="mb-3">
+                            <label for="newPassword" class="form-label text-secondary small fw-semibold">New
+                                Password</label>
+                            <input type="password" class="form-control bg-dark-input border-dark-border text-white"
+                                id="newPassword" required placeholder="Min 6 characters">
+                        </div>
+                        <div class="mb-3">
+                            <label for="confirmNewPassword" class="form-label text-secondary small fw-semibold">Confirm
+                                Password</label>
+                            <input type="password" class="form-control bg-dark-input border-dark-border text-white"
+                                id="confirmNewPassword" required placeholder="Re-type password">
+                        </div>
+                    </div>
+                    <div class="modal-footer border-top border-dark-border">
+                        <button type="button" class="btn btn-secondary-outline" data-bs-dismiss="modal">Cancel</button>
+                        <button type="submit" class="btn btn-primary-gradient px-4">Update Password</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <!-- Modal: Edit User -->
+    <div class="modal fade" id="editUserModal" tabindex="-1" aria-labelledby="editUserModalLabel" aria-hidden="true">
+        <div class="modal-dialog modal-dialog-centered">
+            <div class="modal-content bg-dark border border-dark-border text-white rounded-4">
+                <div class="modal-header border-bottom border-dark-border">
+                    <h5 class="modal-title fw-bold" id="editUserModalLabel"><i
+                            class="bi bi-pencil-square text-info me-1"></i> Edit User Account</h5>
+                    <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"
+                        aria-label="Close"></button>
+                </div>
+                <form id="editUserForm" onsubmit="submitEditUser(event)">
+                    <input type="hidden" id="editUserId">
+                    <div class="modal-body">
+                        <div id="editUserErrorAlert" class="alert alert-danger py-2 px-3 small border-0 mb-3"
+                            style="display: none;"></div>
+                        <div id="editUserSuccessAlert" class="alert alert-success py-2 px-3 small border-0 mb-3"
+                            style="display: none;"></div>
+
+                        <div class="mb-3">
+                            <label for="editUsername"
+                                class="form-label text-secondary small fw-semibold">Username</label>
+                            <input type="text" class="form-control bg-dark-input border-dark-border text-white"
+                                id="editUsername" required placeholder="Min 3 characters">
+                        </div>
+                        <div class="mb-3">
+                            <label for="editUserPassword" class="form-label text-secondary small fw-semibold">Password
+                                (Optional)</label>
+                            <input type="password" class="form-control bg-dark-input border-dark-border text-white"
+                                id="editUserPassword" placeholder="Leave blank to keep current password">
+                        </div>
+                        <div class="mb-3">
+                            <label for="editUserRole" class="form-label text-secondary small fw-semibold">Role</label>
+                            <select class="form-select bg-dark-input border-dark-border text-white" id="editUserRole">
+                                <option value="user">Staff / User</option>
+                                <option value="admin">Administrator</option>
+                            </select>
+                        </div>
+                        <div class="mb-3" id="editPermissionsGroup">
+                            <label class="form-label text-secondary small fw-semibold d-block">Account
+                                Permissions</label>
+                            <div class="form-check form-check-inline mt-1">
+                                <input class="form-check-input bg-dark border-dark-border" type="checkbox"
+                                    id="editPermReceipts">
+                                <label class="form-check-label text-secondary small" for="editPermReceipts">Receipts
+                                    Tab</label>
+                            </div>
+                            <div class="form-check form-check-inline">
+                                <input class="form-check-input bg-dark border-dark-border" type="checkbox"
+                                    id="editPermLedger">
+                                <label class="form-check-label text-secondary small" for="editPermLedger">Ledger
+                                    Tab</label>
+                            </div>
+                            <div class="form-check form-check-inline">
+                                <input class="form-check-input bg-dark border-dark-border" type="checkbox"
+                                    id="editPermEdit">
+                                <label class="form-check-label text-secondary small" for="editPermEdit">Allow
+                                    Edit</label>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="modal-footer border-top border-dark-border">
+                        <button type="button" class="btn btn-secondary-outline" data-bs-dismiss="modal">Cancel</button>
+                        <button type="submit" class="btn btn-primary-gradient px-4">Save Changes</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <!-- Bootstrap Bundle JS -->
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
 
-    <!-- UI Logic Scripts -->
+    <!-- Custom Dashboard Logic -->
     <script>
-        // Track the current batch of PDF downloads
-        window.generatedPdfs = [];
-
         document.addEventListener('DOMContentLoaded', () => {
-            // Load initial tracking state and history log
-            loadTrackingState();
-            loadHistory();
-            
-            // Drag and drop event listeners
+            // Drag and drop events for Excel file
             const uploadArea = document.getElementById('uploadArea');
             const fileInput = document.getElementById('excelFile');
             const uploadFileName = document.getElementById('uploadFileName');
-            
-            fileInput.addEventListener('change', () => {
-                if (fileInput.files.length) {
+
+            uploadArea.addEventListener('click', () => fileInput.click());
+
+            uploadArea.addEventListener('dragover', (e) => {
+                e.preventDefault();
+                uploadArea.classList.add('border-info');
+            });
+
+            uploadArea.addEventListener('dragleave', () => {
+                uploadArea.classList.remove('border-info');
+            });
+
+            uploadArea.addEventListener('drop', (e) => {
+                e.preventDefault();
+                uploadArea.classList.remove('border-info');
+                if (e.dataTransfer.files.length > 0) {
+                    fileInput.files = e.dataTransfer.files;
+                    updateUploadLabel();
+                }
+            });
+
+            fileInput.addEventListener('change', updateUploadLabel);
+
+            function updateUploadLabel() {
+                if (fileInput.files.length > 0) {
                     uploadFileName.textContent = fileInput.files[0].name;
                     uploadArea.classList.add('border-info');
+                } else {
+                    uploadFileName.textContent = 'Drag & drop donation Excel here';
+                    uploadArea.classList.remove('border-info');
                 }
-            });
-            
-            ['dragenter', 'dragover'].forEach(eventName => {
-                uploadArea.addEventListener(eventName, (e) => {
-                    e.preventDefault();
-                    uploadArea.classList.add('dragover');
-                }, false);
-            });
-            
-            ['dragleave', 'drop'].forEach(eventName => {
-                uploadArea.addEventListener(eventName, (e) => {
-                    e.preventDefault();
-                    uploadArea.classList.remove('dragover');
-                }, false);
-            });
-            
-            uploadArea.addEventListener('drop', (e) => {
-                const dt = e.dataTransfer;
-                const files = dt.files;
-                if (files.length) {
-                    fileInput.files = files;
-                    uploadFileName.textContent = files[0].name;
-                    uploadArea.classList.add('border-info');
-                }
-            });
-            
-            // Upload form submission
+            }
+
+            // Handle generation submission
             const uploadForm = document.getElementById('uploadForm');
-            uploadForm.addEventListener('submit', handleUploadSubmit);
-            
-            // Search handler
-            const searchInput = document.getElementById('historySearch');
-            searchInput.addEventListener('input', debounce(() => {
-                loadHistory(searchInput.value);
-            }, 300));
-            
-            // Reset counter form submission
-            const resetForm = document.getElementById('resetCounterForm');
-            resetForm.addEventListener('submit', handleResetCounterSubmit);
+            if (uploadForm) {
+                uploadForm.addEventListener('submit', handleUploadSubmit);
+            }
+
+            // Handle counter reset submission
+            const resetCounterForm = document.getElementById('resetCounterForm');
+            if (resetCounterForm) {
+                resetCounterForm.addEventListener('submit', handleResetCounterSubmit);
+            }
+
+            // Setup history search listener
+            const historySearch = document.getElementById('historySearch');
+            if (historySearch) {
+                historySearch.addEventListener('input', debounce((e) => {
+                    loadHistory(e.target.value);
+                }, 300));
+            }
+
+            // Set transaction modal date default to today
+            const txDate = document.getElementById('txDate');
+            if (txDate) {
+                txDate.value = new Date().toISOString().split('T')[0];
+            }
+
+            // Conditional Transaction Number display based on payment method select
+            const paymentMethodSelect = document.getElementById('txPaymentMethod');
+            const transactionNumberContainer = document.getElementById('txTransactionNumberContainer');
+            const transactionNumberInput = document.getElementById('txTransactionNumber');
+
+            if (paymentMethodSelect) {
+                paymentMethodSelect.addEventListener('change', (e) => {
+                    const val = e.target.value;
+                    if (val === 'upi' || val === 'bank_transfer') {
+                        transactionNumberContainer.style.display = 'block';
+                        transactionNumberInput.required = true;
+                    } else {
+                        transactionNumberContainer.style.display = 'none';
+                        transactionNumberInput.required = false;
+                        transactionNumberInput.value = '';
+                    }
+                });
+            }
+
+            // Initial load of dashboard state based on modular permissions
+            {% if has_receipts %}
+            loadTrackingState();
+            loadHistory();
+            {% elif has_ledger %}
+            loadLedger();
+            {% endif %}
         });
 
-        // Fetch counter details and system date
+        // Load dashboard info state
         async function loadTrackingState() {
             try {
-                const res = await fetch('/api/tracking-state');
-                if (res.ok) {
-                    const data = await res.json();
+                const response = await fetch('/api/tracking-state');
+                const data = await response.json();
+                if (response.ok) {
                     document.getElementById('lastCounterLabel').textContent = data.last_number_formatted;
                     document.getElementById('systemDateLabel').textContent = data.system_date;
                 }
             } catch (err) {
-                console.error("Failed to load tracking state:", err);
+                console.error("Failed loading tracking state:", err);
             }
         }
 
-        // Fetch receipts log history
-        async function loadHistory(searchTerm = '') {
+        // Load receipts table history
+        async function loadHistory(searchQuery = '') {
+            const historyTableBody = document.getElementById('historyTableBody');
+
             try {
-                const res = await fetch(`/api/history?search=${encodeURIComponent(searchTerm)}`);
-                if (res.ok) {
-                    const data = await res.json();
-                    const tbody = document.getElementById('historyTableBody');
-                    tbody.innerHTML = '';
-                    
-                    if (data.length === 0) {
-                        tbody.innerHTML = `<tr><td colspan="7" class="text-center text-secondary py-3">No matching records found.</td></tr>`;
-                        return;
-                    }
-                    
-                    data.forEach(item => {
-                        const tr = document.createElement('tr');
-                        
-                        tr.innerHTML = `
-                            <td class="fw-bold text-info">${item.receipt_number}</td>
-                            <td>${item.payer_name}</td>
-                            <td class="fw-bold">${item.amount}</td>
-                            <td>${item.payment_date}</td>
-                            <td>${item.receipt_date}</td>
-                            <td class="text-secondary small font-monospace">${item.reference_number || '-'}</td>
-                            <td class="text-center">
-                                <div class="d-flex justify-content-center gap-2">
-                                    <a href="/preview/${item.receipt_number}" target="_blank" class="btn-action-icon" title="Preview Receipt">
-                                        <i class="bi bi-eye-fill"></i>
-                                    </a>
-                                    <a href="/download/pdf/${item.receipt_number}" class="btn-action-icon btn-action-icon-download" title="Download PDF">
-                                        <i class="bi bi-download"></i>
-                                    </a>
-                                    <button type="button" onclick="deleteReceipt('${item.receipt_number}')" class="btn-action-icon text-danger border-danger-subtle" title="Delete Receipt">
-                                        <i class="bi bi-trash-fill"></i>
-                                    </button>
-                                </div>
-                            </td>
-                        `;
-                        tbody.appendChild(tr);
-                    });
+                const response = await fetch(`/api/history?search=${encodeURIComponent(searchQuery)}`);
+                const records = await response.json();
+
+                historyTableBody.innerHTML = '';
+                if (records.length === 0) {
+                    historyTableBody.innerHTML = `<tr><td colspan="7" class="text-center py-4 text-secondary">No records found.</td></tr>`;
+                    return;
                 }
+
+                records.forEach(r => {
+                    const tr = document.createElement('tr');
+
+                    tr.innerHTML = `
+                        <td class="font-monospace text-info fw-semibold">${r.receipt_number}</td>
+                        <td><strong>${r.payer_name}</strong></td>
+                        <td class="fw-semibold">₹${parseFloat(r.amount).toLocaleString('en-IN', { minimumFractionDigits: 2 })}</td>
+                        <td>${r.payment_date}</td>
+                        <td>${r.receipt_date}</td>
+                        <td class="text-secondary small font-monospace">${r.reference_number || '-'}</td>
+                        <td class="text-center">
+                            <div class="d-inline-flex gap-1">
+                                <a href="/preview/${r.receipt_number}" target="_blank" class="btn btn-sm btn-outline-info py-0 px-2" title="Preview receipt in browser">
+                                    <i class="bi bi-eye"></i>
+                                </a>
+                                <a href="/download/pdf/${r.receipt_number}" class="btn btn-sm btn-outline-success py-0 px-2" title="Download PDF File">
+                                    <i class="bi bi-download"></i>
+                                </a>
+                                {% if can_edit %}
+                                <button onclick="deleteReceipt('${r.receipt_number}')" class="btn btn-sm btn-outline-danger py-0 px-2" title="Delete receipt record">
+                                    <i class="bi bi-trash"></i>
+                                </button>
+                                {% endif %}
+                            </div>
+                        </td>
+                    `;
+                    historyTableBody.appendChild(tr);
+                });
             } catch (err) {
-                console.error("Failed to load history:", err);
+                console.error("Failed loading history:", err);
+                historyTableBody.innerHTML = `<tr><td colspan="7" class="text-center py-4 text-danger">Error loading history logs.</td></tr>`;
             }
         }
 
-        // Handle Excel Upload
+        // Handle Receipts Generation
         async function handleUploadSubmit(e) {
             e.preventDefault();
             const fileInput = document.getElementById('excelFile');
@@ -293,21 +942,20 @@
             const progressContainer = document.getElementById('progressBarContainer');
             const progressBar = document.getElementById('progressBar');
             const progressPercent = document.getElementById('progressPercent');
-            
-            if (!fileInput.files.length) {
-                showUIAler('danger', 'Please select an Excel spreadsheet to upload.');
+
+            if (fileInput.files.length === 0) {
+                showUIAler('danger', 'Please select a spreadsheet file first.');
                 return;
             }
-            
+
             alertsContainer.innerHTML = '';
             progressContainer.style.display = 'block';
             progressBar.style.width = '0%';
             progressPercent.textContent = '0%';
-            
+
             const formData = new FormData();
             formData.append('file', fileInput.files[0]);
-            
-            // Artificial progress bar updates for feedback during backend PDF processing
+
             let currentProgress = 0;
             const progressInterval = setInterval(() => {
                 if (currentProgress < 90) {
@@ -316,22 +964,28 @@
                     progressPercent.textContent = `${Math.round(currentProgress)}%`;
                 }
             }, 250);
-            
+
             try {
                 const response = await fetch('/generate', {
                     method: 'POST',
                     body: formData
                 });
-                
+
                 clearInterval(progressInterval);
                 progressBar.style.width = '100%';
                 progressPercent.textContent = '100%';
-                
-                const result = await response.json();
-                
+
+                let result;
+                try {
+                    result = await response.json();
+                } catch (jsonErr) {
+                    const text = await response.text();
+                    throw new Error(`Server returned status ${response.status}: ${text.substring(0, 150)}`);
+                }
+
                 if (response.ok) {
                     let summaryHtml = `<strong>Success!</strong> ${result.message}`;
-                    
+
                     if (result.skipped_duplicates && result.skipped_duplicates.length > 0) {
                         summaryHtml += `<div class="mt-2 text-warning small">
                             <i class="bi bi-exclamation-triangle-fill me-1"></i>
@@ -339,18 +993,17 @@
                             <span class="font-monospace text-secondary-50">${result.skipped_duplicates.join(', ')}</span>
                         </div>`;
                     }
-                    
+
                     showUIAler('success', summaryHtml);
-                    
+
                     if (result.count > 0) {
-                        // Display batch download panel
                         document.getElementById('actionButtonsContainer').style.display = 'block';
                         document.getElementById('downloadZipBtn').href = `/download/zip/${result.batch_id}`;
                         window.generatedPdfs = result.pdf_urls;
                     } else {
                         document.getElementById('actionButtonsContainer').style.display = 'none';
                     }
-                    
+
                     loadTrackingState();
                     loadHistory();
                 } else {
@@ -359,7 +1012,8 @@
                 }
             } catch (err) {
                 clearInterval(progressInterval);
-                showUIAler('danger', 'An error occurred during network submission.');
+                console.error("Upload error:", err);
+                showUIAler('danger', `An error occurred during submission: ${err.message || err}`);
                 document.getElementById('actionButtonsContainer').style.display = 'none';
             } finally {
                 setTimeout(() => {
@@ -374,16 +1028,16 @@
             const customStartInput = document.getElementById('customStartNumber');
             const alertsContainer = document.getElementById('settingsAlertsContainer');
             alertsContainer.innerHTML = '';
-            
+
             const customVal = customStartInput.value.trim();
-            const promptMsg = customVal !== '' 
+            const promptMsg = customVal !== ''
                 ? `Are you sure you want to reset the receipt counter start to ${customVal}?`
-                : 'Are you sure you want to reset the receipt counter back to start (MOFDR001)?';
-                
+                : 'Are you sure you want to reset the receipt counter back to start (SFDR-{{ current_year }}-001)?';
+
             if (!confirm(promptMsg)) {
                 return;
             }
-            
+
             try {
                 const response = await fetch('/admin/reset-counter', {
                     method: 'POST',
@@ -392,9 +1046,9 @@
                     },
                     body: JSON.stringify({ start_val: customVal })
                 });
-                
+
                 const result = await response.json();
-                
+
                 if (response.ok) {
                     showSettingsAler('success', result.message);
                     customStartInput.value = '';
@@ -412,12 +1066,12 @@
             if (!confirm(`Are you sure you want to permanently delete receipt ${receiptNumber} and its PDF file?`)) {
                 return;
             }
-            
+
             try {
                 const response = await fetch(`/api/delete-receipt/${receiptNumber}`, {
                     method: 'POST'
                 });
-                
+
                 const result = await response.json();
                 if (response.ok) {
                     loadHistory(document.getElementById('historySearch').value);
@@ -436,15 +1090,15 @@
             if (!confirm('WARNING: Are you sure you want to permanently clear ALL generated receipts from database and delete all PDF files from disk? This action CANNOT be undone.')) {
                 return;
             }
-            
+
             try {
                 const response = await fetch('/admin/clear-history', {
                     method: 'POST'
                 });
-                
+
                 const result = await response.json();
                 const alertsContainer = document.getElementById('settingsAlertsContainer');
-                
+
                 if (response.ok) {
                     showSettingsAler('success', result.message);
                     loadHistory();
@@ -463,7 +1117,7 @@
                 alert('No receipts in the current batch to download.');
                 return;
             }
-            
+
             window.generatedPdfs.forEach((pdf, index) => {
                 setTimeout(() => {
                     const a = document.createElement('a');
@@ -472,7 +1126,7 @@
                     document.body.appendChild(a);
                     a.click();
                     document.body.removeChild(a);
-                }, index * 400); // 400ms delay avoids browser popup blocking
+                }, index * 400);
             });
         }
 
@@ -509,11 +1163,644 @@
         // Utility debounce
         function debounce(func, wait) {
             let timeout;
-            return function(...args) {
+            return function (...args) {
                 clearTimeout(timeout);
                 timeout = setTimeout(() => func.apply(this, args), wait);
             };
         }
+
+
+        // ==========================================
+        // LEDGER MANAGEMENT LOGIC
+        // ==========================================
+
+        function loadLedger() {
+            loadLedgerBalance();
+            loadLedgerTransactions();
+        }
+
+        async function loadLedgerBalance() {
+            try {
+                const response = await fetch('/api/balance');
+                const data = await response.json();
+                if (response.ok) {
+                    document.getElementById('ledgerBalance').textContent = `₹${parseFloat(data.current_balance).toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
+                    document.getElementById('ledgerTotalAdded').textContent = `₹${parseFloat(data.total_added).toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
+                    document.getElementById('ledgerTotalRemoved').textContent = `₹${parseFloat(data.total_removed).toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
+                }
+            } catch (err) {
+                console.error("Error loading balance:", err);
+            }
+        }
+
+        async function loadLedgerTransactions() {
+            const search = document.getElementById('filterSearch').value;
+            const type = document.getElementById('filterType').value;
+            const startDate = document.getElementById('filterStartDate').value;
+            const endDate = document.getElementById('filterEndDate').value;
+            const eventName = document.getElementById('filterEvent').value;
+            const personName = document.getElementById('filterPerson').value;
+
+            const params = new URLSearchParams({
+                search: search,
+                type: type,
+                start_date: startDate,
+                end_date: endDate,
+                event_name: eventName,
+                person_name: personName
+            });
+
+            try {
+                const response = await fetch(`/api/transactions?${params.toString()}`);
+                const txs = await response.json();
+                const tbody = document.getElementById('ledgerTableBody');
+                tbody.innerHTML = '';
+
+                if (txs.length === 0) {
+                    tbody.innerHTML = '<tr><td colspan="9" class="text-center text-secondary py-3">No transactions found matching the filters.</td></tr>';
+                    return;
+                }
+
+                txs.forEach(tx => {
+                    const row = document.createElement('tr');
+                    const badgeClass = tx.type === 'add' ? 'bg-success-subtle text-success border border-success-subtle' : 'bg-danger-subtle text-danger border border-danger-subtle';
+                    const badgeText = tx.type === 'add' ? 'Credit' : 'Debit';
+                    const amountPrefix = tx.type === 'add' ? '+' : '-';
+                    const amountClass = tx.type === 'add' ? 'text-success fw-bold' : 'text-danger fw-bold';
+
+                    const paymentMethodText = tx.payment_method ? tx.payment_method.toUpperCase().replace('_', ' ') : 'CASH';
+                    const paymentMethodBadge = tx.payment_method === 'upi' ? 'bg-info-subtle text-info border border-info-subtle' : 
+                                               (tx.payment_method === 'bank_transfer' ? 'bg-primary-subtle text-primary border border-primary-subtle' : 
+                                               'bg-secondary-subtle text-secondary border border-secondary-subtle');
+                    const detailsCell = `
+                        <td>
+                            <span class="badge ${paymentMethodBadge}">${paymentMethodText}</span>
+                            ${(tx.payment_method === 'upi' || tx.payment_method === 'bank_transfer') && tx.transaction_number ? `<br><small class="text-secondary-50 font-monospace" style="font-size: 0.75rem;">Ref: ${tx.transaction_number}</small>` : ''}
+                        </td>
+                    `;
+
+                    let actionButtons = '';
+                    {% if can_edit %}
+                        {% if session.get('role') == 'admin' %}
+                        if (tx.type === 'add') {
+                            actionButtons += `
+                                <button type="button" class="btn btn-sm btn-outline-info py-0 px-2 me-1" onclick="generateReceiptFromLedger(${tx.id})" title="Generate Donation Receipt">
+                                    <i class="bi bi-file-earmark-pdf"></i>
+                                </button>
+                            `;
+                        }
+                        {% endif %}
+                        actionButtons += `
+                            <button type="button" class="btn btn-sm btn-outline-danger py-0 px-2" onclick="deleteTransactionEntry(${tx.id})">
+                                <i class="bi bi-trash"></i>
+                            </button>
+                        `;
+                    {% else %}
+                        actionButtons = '<span class="text-secondary-50 small">-</span>';
+                    {% endif %}
+
+                    row.innerHTML = `
+                        <td>${tx.date}</td>
+                        <td><span class="badge ${badgeClass}">${badgeText}</span></td>
+                        <td class="${amountClass}">${amountPrefix} ₹${parseFloat(tx.amount).toLocaleString('en-IN', { minimumFractionDigits: 2 })}</td>
+                        <td><strong>${tx.event_name}</strong></td>
+                        <td>${tx.person_name || '-'}</td>
+                        ${detailsCell}
+                        <td><span class="text-secondary small">${tx.remarks || '-'}</span></td>
+                        <td><span class="text-secondary small font-monospace">${tx.created_by}</span></td>
+                        <td class="text-center">
+                            <div class="d-inline-flex align-items-center">
+                                ${actionButtons}
+                            </div>
+                        </td>
+                    `;
+                    tbody.appendChild(row);
+                });
+            } catch (err) {
+                console.error("Error loading ledger transactions:", err);
+            }
+        }
+
+        function resetLedgerFilters() {
+            document.getElementById('ledgerFilterForm').reset();
+            loadLedgerTransactions();
+        }
+
+        let currentTxModalType = 'add';
+        function setTxModalType(type) {
+            currentTxModalType = type;
+            const modalTitle = document.getElementById('transactionModalLabel');
+            const submitBtn = document.getElementById('submitTxBtn');
+            const generateReceiptContainer = document.getElementById('txGenerateReceiptContainer');
+
+            if (type === 'add') {
+                modalTitle.textContent = 'Add Funds (Credit Entry)';
+                submitBtn.className = 'btn btn-primary-gradient px-4';
+                submitBtn.innerHTML = '<i class="bi bi-plus-circle me-1"></i> Record Credit';
+                if (generateReceiptContainer) {
+                    generateReceiptContainer.style.display = 'block';
+                }
+            } else {
+                modalTitle.textContent = 'Remove Funds (Debit Entry)';
+                submitBtn.className = 'btn btn-danger px-4';
+                submitBtn.innerHTML = '<i class="bi bi-dash-circle me-1"></i> Record Debit';
+                if (generateReceiptContainer) {
+                    generateReceiptContainer.style.display = 'none';
+                    const chk = document.getElementById('txGenerateReceipt');
+                    if (chk) chk.checked = false;
+                }
+            }
+        }
+
+        async function submitTransaction(e) {
+            e.preventDefault();
+            const amount = document.getElementById('txAmount').value.trim();
+            const date = document.getElementById('txDate').value;
+            const eventName = document.getElementById('txEventName').value.trim();
+            const personName = document.getElementById('txPersonName').value.trim();
+            const remarks = document.getElementById('txRemarks').value.trim();
+            const paymentMethod = document.getElementById('txPaymentMethod').value;
+            const transactionNumber = document.getElementById('txTransactionNumber').value.trim();
+            const generateReceiptCheckbox = document.getElementById('txGenerateReceipt');
+            const shouldGenerateReceipt = generateReceiptCheckbox ? generateReceiptCheckbox.checked : false;
+
+            const errorAlert = document.getElementById('txErrorAlert');
+            errorAlert.style.display = 'none';
+
+            try {
+                const response = await fetch('/api/transactions', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        type: currentTxModalType,
+                        amount: amount,
+                        date: date,
+                        event_name: eventName,
+                        person_name: personName,
+                        remarks: remarks,
+                        payment_method: paymentMethod,
+                        transaction_number: transactionNumber
+                    })
+                });
+
+                const result = await response.json();
+                if (response.ok) {
+                    const modalEl = document.getElementById('transactionModal');
+                    const modal = bootstrap.Modal.getInstance(modalEl);
+                    modal.hide();
+                    
+                    const newTxId = result.tx_id;
+
+                    document.getElementById('transactionForm').reset();
+                    document.getElementById('txDate').value = new Date().toISOString().split('T')[0];
+                    
+                    const transactionNumberContainer = document.getElementById('txTransactionNumberContainer');
+                    const transactionNumberInput = document.getElementById('txTransactionNumber');
+                    if (transactionNumberContainer) {
+                        transactionNumberContainer.style.display = 'none';
+                    }
+                    if (transactionNumberInput) {
+                        transactionNumberInput.required = false;
+                    }
+                    
+                    loadLedger();
+
+                    if (shouldGenerateReceipt && newTxId) {
+                        setTimeout(() => {
+                            generateReceiptFromLedger(newTxId);
+                        }, 500);
+                    }
+                } else {
+                    errorAlert.textContent = result.error || 'Failed to submit transaction.';
+                    errorAlert.style.display = 'block';
+                }
+            } catch (err) {
+                errorAlert.textContent = 'Network error saving transaction.';
+                errorAlert.style.display = 'block';
+            }
+        }
+
+        async function deleteTransactionEntry(txId) {
+            if (!confirm("Are you sure you want to permanently delete this transaction record? This will adjust your balance.")) {
+                return;
+            }
+            try {
+                const response = await fetch(`/api/transactions/delete/${txId}`, {
+                    method: 'POST'
+                });
+                if (response.ok) {
+                    loadLedger();
+                } else {
+                    alert("Failed to delete transaction entry.");
+                }
+            } catch (err) {
+                alert("Network error deleting entry.");
+            }
+        }
+
+        async function generateReceiptFromLedger(txId) {
+            try {
+                const response = await fetch(`/api/transactions/generate-receipt/${txId}`, {
+                    method: 'POST'
+                });
+                const result = await response.json();
+                if (response.ok) {
+                    alert(result.message);
+                    if (result.url) {
+                        window.open(result.url, '_blank');
+                    }
+                    loadLedger();
+                    if (typeof loadHistory === 'function') {
+                        loadHistory();
+                    }
+                } else {
+                    alert(result.error || "Failed to generate receipt.");
+                }
+            } catch (err) {
+                console.error("Error generating receipt:", err);
+                alert("Network error generating receipt.");
+            }
+        }
+
+        function downloadLedgerExcel() {
+            const search = document.getElementById('filterSearch').value;
+            const type = document.getElementById('filterType').value;
+            const startDate = document.getElementById('filterStartDate').value;
+            const endDate = document.getElementById('filterEndDate').value;
+            const eventName = document.getElementById('filterEvent').value;
+            const personName = document.getElementById('filterPerson').value;
+
+            const params = new URLSearchParams({
+                search: search,
+                type: type,
+                start_date: startDate,
+                end_date: endDate,
+                event_name: eventName,
+                person_name: personName
+            });
+
+            window.location.href = `/api/transactions/export?${params.toString()}`;
+        }
+
+
+        // ==========================================
+        // USER PASSWORD CHANGE LOGIC
+        // ==========================================
+
+        async function submitChangePassword(e) {
+            e.preventDefault();
+            const pwd = document.getElementById('newPassword').value;
+            const confirmPwd = document.getElementById('confirmNewPassword').value;
+            const errorAlert = document.getElementById('changePasswordErrorAlert');
+            const successAlert = document.getElementById('changePasswordSuccessAlert');
+
+            errorAlert.style.display = 'none';
+            successAlert.style.display = 'none';
+
+            if (pwd !== confirmPwd) {
+                errorAlert.textContent = 'Passwords do not match.';
+                errorAlert.style.display = 'block';
+                return;
+            }
+
+            try {
+                const response = await fetch('/api/change-password', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ password: pwd })
+                });
+                const result = await response.json();
+                if (response.ok) {
+                    successAlert.textContent = result.message;
+                    successAlert.style.display = 'block';
+                    document.getElementById('changePasswordForm').reset();
+                    setTimeout(() => {
+                        const modalEl = document.getElementById('changePasswordModal');
+                        const modal = bootstrap.Modal.getInstance(modalEl);
+                        modal.hide();
+                        successAlert.style.display = 'none';
+                    }, 2000);
+                } else {
+                    errorAlert.textContent = result.error || 'Failed to change password.';
+                    errorAlert.style.display = 'block';
+                }
+            } catch (err) {
+                errorAlert.textContent = 'Network error resetting password.';
+                errorAlert.style.display = 'block';
+            }
+        }
+
+
+        // ==========================================
+        // ADMIN PANEL MANAGEMENT LOGIC
+        // ==========================================
+
+        function loadAdminPanel() {
+            loadUsersList();
+            loadLogs();
+        }
+
+        async function loadUsersList() {
+            const tbody = document.getElementById('usersTableBody');
+            if (!tbody) return;
+
+            try {
+                const response = await fetch('/api/admin/users');
+                const users = await response.json();
+                window.loadedUsers = users;
+                tbody.innerHTML = '';
+
+                users.forEach(u => {
+                    const row = document.createElement('tr');
+                    const badgeClass = u.role === 'admin' ? 'bg-info-subtle text-info border border-info-subtle' : 'bg-secondary-subtle text-secondary border border-secondary-subtle';
+
+                    row.innerHTML = `
+                        <td><strong class="text-white"><i class="bi bi-person-fill text-info me-1"></i>${u.username}</strong></td>
+                        <td><span class="badge ${badgeClass}">${u.role.toUpperCase()}</span></td>
+                        <td class="text-center">${u.allow_receipts ? '<i class="bi bi-check-circle-fill text-success"></i>' : '<i class="bi bi-x-circle-fill text-danger"></i>'}</td>
+                        <td class="text-center">${u.allow_ledger ? '<i class="bi bi-check-circle-fill text-success"></i>' : '<i class="bi bi-x-circle-fill text-danger"></i>'}</td>
+                        <td class="text-center">${u.can_edit ? '<i class="bi bi-check-circle-fill text-success"></i>' : '<i class="bi bi-x-circle-fill text-danger"></i>'}</td>
+                        <td><span class="text-secondary small font-monospace">${u.created_at.split('.')[0]}</span></td>
+                        <td>
+                            <div class="d-inline-flex gap-1">
+                                <button type="button" class="btn btn-sm btn-outline-info py-0 px-2" onclick="openEditUserModal(${u.id})">
+                                    <i class="bi bi-pencil"></i> Edit
+                                </button>
+                                ${u.username !== 'admin' ? `
+                                    <button type="button" class="btn btn-sm btn-outline-danger py-0 px-2" onclick="deleteUserEntry('${u.username}')">
+                                        <i class="bi bi-x-circle"></i> Delete
+                                    </button>
+                                ` : ''}
+                            </div>
+                        </td>
+                    `;
+                    tbody.appendChild(row);
+                });
+            } catch (err) {
+                console.error("Error loading users:", err);
+            }
+        }
+
+        async function loadLogs() {
+            const accessTbody = document.getElementById('accessLogsTableBody');
+            const auditTbody = document.getElementById('auditLogsTableBody');
+            if (!accessTbody || !auditTbody) return;
+
+            try {
+                const response = await fetch('/api/admin/logs');
+                const data = await response.json();
+
+                // Load Access Logs
+                accessTbody.innerHTML = '';
+                if (data.access_logs.length === 0) {
+                    accessTbody.innerHTML = '<tr><td colspan="4" class="text-center text-secondary py-2">No login logs.</td></tr>';
+                } else {
+                    data.access_logs.forEach(log => {
+                        const tr = document.createElement('tr');
+                        const actionBadge = log.action === 'login'
+                            ? 'bg-success-subtle text-success border border-success-subtle'
+                            : (log.action === 'failed_login' ? 'bg-danger-subtle text-danger border border-danger-subtle' : 'bg-secondary-subtle text-secondary border border-secondary-subtle');
+                        tr.innerHTML = `
+                            <td><span class="badge ${actionBadge}">${log.action.toUpperCase()}</span></td>
+                            <td><strong class="text-white">${log.username}</strong></td>
+                            <td><span class="text-secondary small font-monospace">${log.ip_address}</span></td>
+                            <td><span class="text-secondary small font-monospace">${log.timestamp}</span></td>
+                        `;
+                        accessTbody.appendChild(tr);
+                    });
+                }
+
+                // Load Audit Logs
+                auditTbody.innerHTML = '';
+                if (data.audit_logs.length === 0) {
+                    auditTbody.innerHTML = '<tr><td colspan="4" class="text-center text-secondary py-2">No auditing trails.</td></tr>';
+                } else {
+                    data.audit_logs.forEach(log => {
+                        const tr = document.createElement('tr');
+                        tr.innerHTML = `
+                            <td><strong class="text-white">${log.username}</strong></td>
+                            <td><span class="badge bg-secondary-subtle border border-secondary-subtle text-info font-monospace text-xs">${log.action.toUpperCase()}</span></td>
+                            <td><span class="text-secondary small">${log.details}</span></td>
+                            <td><span class="text-secondary-50 small font-monospace">${log.timestamp}</span></td>
+                        `;
+                        auditTbody.appendChild(tr);
+                    });
+                }
+            } catch (err) {
+                console.error("Error loading activity logs:", err);
+            }
+        }
+
+        async function submitCreateUser(e) {
+            e.preventDefault();
+            const u = document.getElementById('newUsername').value.trim();
+            const p = document.getElementById('newUserPassword').value;
+            const r = document.getElementById('newUserRole').value;
+
+            const permReceipts = document.getElementById('permReceipts').checked ? 1 : 0;
+            const permLedger = document.getElementById('permLedger').checked ? 1 : 0;
+            const permEdit = document.getElementById('permEdit').checked ? 1 : 0;
+
+            const errorAlert = document.getElementById('createUserErrorAlert');
+            const successAlert = document.getElementById('createUserSuccessAlert');
+
+            errorAlert.style.display = 'none';
+            successAlert.style.display = 'none';
+
+            try {
+                const response = await fetch('/api/admin/users', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        username: u,
+                        password: p,
+                        role: r,
+                        allow_receipts: permReceipts,
+                        allow_ledger: permLedger,
+                        can_edit: permEdit
+                    })
+                });
+
+                const result = await response.json();
+                if (response.ok) {
+                    successAlert.textContent = result.message;
+                    successAlert.style.display = 'block';
+                    document.getElementById('createUserForm').reset();
+
+                    // Reset fields
+                    document.getElementById('permReceipts').disabled = false;
+                    document.getElementById('permLedger').disabled = false;
+                    document.getElementById('permEdit').disabled = false;
+                    document.getElementById('permReceipts').checked = true;
+                    document.getElementById('permLedger').checked = true;
+                    document.getElementById('permEdit').checked = true;
+
+                    loadUsersList();
+                    loadLogs();
+                    setTimeout(() => { successAlert.style.display = 'none'; }, 3000);
+                } else {
+                    errorAlert.textContent = result.error || 'Failed to create user account.';
+                    errorAlert.style.display = 'block';
+                }
+            } catch (err) {
+                errorAlert.textContent = 'Network error register user.';
+                errorAlert.style.display = 'block';
+            }
+        }
+
+        async function deleteUserEntry(username) {
+            if (!confirm(`Are you sure you want to permanently delete user account "${username}"?`)) {
+                return;
+            }
+            try {
+                const response = await fetch(`/api/admin/users/delete/${username}`, {
+                    method: 'POST'
+                });
+                const result = await response.json();
+                if (response.ok) {
+                    loadUsersList();
+                    loadLogs();
+                    alert(result.message);
+                } else {
+                    alert(result.error || "Failed to delete user.");
+                }
+            } catch (err) {
+                alert("Network error deleting user.");
+            }
+        }
+
+        // Toggle user creation permissions select state based on user role select box
+        document.addEventListener('DOMContentLoaded', () => {
+            const roleSelect = document.getElementById('newUserRole');
+            if (roleSelect) {
+                roleSelect.addEventListener('change', (e) => {
+                    const isCharityAdmin = e.target.value === 'admin';
+                    const checkboxes = ['permReceipts', 'permLedger', 'permEdit'];
+                    checkboxes.forEach(id => {
+                        const checkbox = document.getElementById(id);
+                        if (checkbox) {
+                            if (isCharityAdmin) {
+                                checkbox.checked = true;
+                                checkbox.disabled = true;
+                            } else {
+                                checkbox.disabled = false;
+                            }
+                        }
+                    });
+                });
+            }
+
+            const editRoleSelect = document.getElementById('editUserRole');
+            if (editRoleSelect) {
+                editRoleSelect.addEventListener('change', (e) => {
+                    const isCharityAdmin = e.target.value === 'admin';
+                    const checkboxes = ['editPermReceipts', 'editPermLedger', 'editPermEdit'];
+                    checkboxes.forEach(id => {
+                        const checkbox = document.getElementById(id);
+                        if (checkbox) {
+                            if (isCharityAdmin) {
+                                checkbox.checked = true;
+                                checkbox.disabled = true;
+                            } else {
+                                checkbox.disabled = false;
+                            }
+                        }
+                    });
+                });
+            }
+        });
+
+        function openEditUserModal(userId) {
+            if (!window.loadedUsers) return;
+            const u = window.loadedUsers.find(user => user.id === userId);
+            if (!u) return;
+
+            document.getElementById('editUserId').value = u.id;
+            document.getElementById('editUsername').value = u.username;
+            document.getElementById('editUserPassword').value = '';
+            document.getElementById('editUserRole').value = u.role;
+
+            const pr = document.getElementById('editPermReceipts');
+            const pl = document.getElementById('editPermLedger');
+            const pe = document.getElementById('editPermEdit');
+
+            pr.checked = u.allow_receipts === 1;
+            pl.checked = u.allow_ledger === 1;
+            pe.checked = u.can_edit === 1;
+
+            if (u.role === 'admin') {
+                pr.disabled = true;
+                pl.disabled = true;
+                pe.disabled = true;
+            } else {
+                pr.disabled = false;
+                pl.disabled = false;
+                pe.disabled = false;
+            }
+
+            const errorAlert = document.getElementById('editUserErrorAlert');
+            const successAlert = document.getElementById('editUserSuccessAlert');
+            errorAlert.style.display = 'none';
+            successAlert.style.display = 'none';
+
+            const modalEl = document.getElementById('editUserModal');
+            const modal = new bootstrap.Modal(modalEl);
+            modal.show();
+        }
+
+        async function submitEditUser(e) {
+            e.preventDefault();
+            const id = document.getElementById('editUserId').value;
+            const u = document.getElementById('editUsername').value.trim();
+            const p = document.getElementById('editUserPassword').value;
+            const r = document.getElementById('editUserRole').value;
+
+            const permReceipts = document.getElementById('editPermReceipts').checked ? 1 : 0;
+            const permLedger = document.getElementById('editPermLedger').checked ? 1 : 0;
+            const permEdit = document.getElementById('editPermEdit').checked ? 1 : 0;
+
+            const errorAlert = document.getElementById('editUserErrorAlert');
+            const successAlert = document.getElementById('editUserSuccessAlert');
+
+            errorAlert.style.display = 'none';
+            successAlert.style.display = 'none';
+
+            try {
+                const response = await fetch(`/api/admin/users/update/${id}`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        username: u,
+                        password: p,
+                        role: r,
+                        allow_receipts: permReceipts,
+                        allow_ledger: permLedger,
+                        can_edit: permEdit
+                    })
+                });
+
+                const result = await response.json();
+                if (response.ok) {
+                    successAlert.textContent = result.message;
+                    successAlert.style.display = 'block';
+                    loadUsersList();
+                    loadLogs();
+                    setTimeout(() => {
+                        successAlert.style.display = 'none';
+                        const modalEl = document.getElementById('editUserModal');
+                        const modal = bootstrap.Modal.getInstance(modalEl);
+                        if (modal) modal.hide();
+                    }, 1500);
+                } else {
+                    errorAlert.textContent = result.error || 'Failed to update user account.';
+                    errorAlert.style.display = 'block';
+                }
+            } catch (err) {
+                errorAlert.textContent = 'Network error updating user.';
+                errorAlert.style.display = 'block';
+            }
+        }
     </script>
 </body>
+
 </html>

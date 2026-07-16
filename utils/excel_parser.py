@@ -77,6 +77,14 @@ def parse_receipt_excel(file_path):
         ref_num = str(row['Payment Reference Number']).strip() if not pd.isna(row['Payment Reference Number']) else ''
         event_name = str(row['Event Name']).strip() if not pd.isna(row['Event Name']) else ''
         
+        # Optional fields from Canva Receipt Template
+        donor_address = str(row['Address']).strip() if 'Address' in df.columns and not pd.isna(row['Address']) else ''
+        donor_email = str(row['Email']).strip() if 'Email' in df.columns and not pd.isna(row['Email']) else ''
+        donor_mobile = str(row['Mobile No']).strip() if 'Mobile No' in df.columns and not pd.isna(row['Mobile No']) else ''
+        donor_pan = str(row["Donor's PAN No"]).strip() if "Donor's PAN No" in df.columns and not pd.isna(row["Donor's PAN No"]) else ''
+        donor_aadhaar = str(row['Aadhaar No']).strip() if 'Aadhaar No' in df.columns and not pd.isna(row['Aadhaar No']) else ''
+        payment_mode = str(row['Payment Mode']).strip() if 'Payment Mode' in df.columns and not pd.isna(row['Payment Mode']) else 'Online'
+        
         # Row-level validations
         if not payer_name:
             raise ValueError(f"Row {row_num}: 'Payer Name' cannot be empty.")
@@ -106,7 +114,13 @@ def parse_receipt_excel(file_path):
             'payment_date': formatted_pay_date,
             'amount': amount,
             'reference_number': ref_num,
-            'event_name': event_name if event_name else 'Donation'
+            'event_name': event_name if event_name else 'Donation',
+            'donor_address': donor_address,
+            'donor_email': donor_email,
+            'donor_mobile': donor_mobile,
+            'donor_pan': donor_pan,
+            'donor_aadhaar': donor_aadhaar,
+            'payment_mode': payment_mode
         })
         
     return records

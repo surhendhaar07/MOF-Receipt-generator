@@ -1,11 +1,11 @@
-# Makkalil Oruvan Foundation Donation Receipt Generator
+# Sezhiyam Foundation Donation Receipt Generator
 
 An automated web application designed to generate official donation receipts from an Excel spreadsheet. This app replicates the official receipt template exactly, fills in dynamic fields, prevents duplicate receipt generation for the same transaction reference, and maintains a persistent receipt serial counter.
 
 ## Key Features
 
 1. **Exact Receipt Design Replication**: Replaces only the dynamic fields in the receipt layout. Replicates borders, alignments, logos, official text details, and the founder's signature.
-2. **Automated Counter Management**: Stores and increments receipt serial numbers (e.g. `MOFDR011`, `MOFDR012`) permanently using SQLite.
+2. **Automated Counter Management**: Stores and increments receipt serial numbers (e.g. `SFDR-2026-011`, `SFDR-2026-012`) permanently using SQLite.
 3. **Duplicate Prevention**: Scans each row's payment reference number before generating a PDF. If it exists in the database logs, it skips generation and alerts the user.
 4. **Number-to-Words Translation**: Automatic conversion of donation amounts into Indian English format (e.g. Lakhs, Thousands) without commas or hyphens (e.g. `150000` -> `One Lakh Fifty Thousand`).
 5. **Interactive Logs**: Search past receipts by Payer Name, Receipt Number, Reference Number, or Date, with options to preview in-browser or download individually.

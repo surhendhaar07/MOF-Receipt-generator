@@ -1,95 +1,522 @@
 <!DOCTYPE html>
 <html lang="en">
+
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Donation Receipt - {{ receipt_number }}</title>
-    <!-- Link to static styling sheet -->
-    <link rel="stylesheet" href="{{ url_for('static', filename='style.css', _external=True) }}">
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Arvo:wght@700;800&family=Roboto+Slab:wght@700;800&family=Montserrat:wght@500;600;700;800&family=Inter:wght@400;500;600;700;800&family=Playfair+Display:ital,wght@1,600;1,700&display=swap');
+
+        /* A4 Page Formatting */
+        @page {
+            size: A4 portrait;
+            margin: 10mm 15mm;
+        }
+
+        body {
+            font-family: 'Inter', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+            color: #1e293b;
+            background-color: #ffffff;
+            margin: 0;
+            padding: 0;
+            font-size: 12px;
+            line-height: 1.4;
+            -webkit-print-color-adjust: exact;
+            print-color-adjust: exact;
+        }
+
+        .receipt-container {
+            width: 100%;
+            margin: 0 auto;
+            box-sizing: border-box;
+            position: relative;
+        }
+
+        /* Faded logo watermark behind the fields */
+        .receipt-container::before {
+            content: "";
+            position: absolute;
+            top: 220px;
+            left: 0;
+            right: 0;
+            bottom: 120px;
+            background-image: url('{{ logo_url }}');
+            background-repeat: no-repeat;
+            background-position: center;
+            background-size: 60%;
+            opacity: 0.05;
+            /* Faded watermark */
+            z-index: -1;
+        }
+
+        /* Branding Header (Peach Box) */
+        .branding-box {
+            background-color: #FFF2EA;
+            border-radius: 15px;
+            padding: 15px 20px;
+            margin-bottom: 8px;
+            display: flex;
+            align-items: center;
+        }
+
+        .logo-col {
+            width: 115px;
+            flex-shrink: 0;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .logo-img {
+            width: 95px;
+            height: auto;
+        }
+
+        .info-col {
+            flex-grow: 1;
+            text-align: center;
+            padding-left: 0;
+            margin-right: 115px; /* Offset the logo column width on the left to perfectly center the text */
+        }
+
+        .org-name-main {
+            font-family: 'Arvo', 'Roboto Slab', 'Times New Roman', Times, serif;
+            font-size: 32px;
+            font-weight: 800;
+            color: #5c1d4a;
+            /* Maroon/purple tone matching Canva */
+            margin: 0;
+            letter-spacing: 0.5px;
+        }
+
+        .org-name-sub {
+            font-family: 'Montserrat', 'Inter', sans-serif;
+            font-size: 18px;
+            font-weight: 700;
+            color: #5c1d4a;
+            margin: 2px 0 6px 0;
+            letter-spacing: 0.45em;
+            text-transform: uppercase;
+        }
+
+        .org-addr {
+            font-size: 13px;
+            color: #5c1d4a;
+            font-weight: 600;
+            margin: 0 0 6px 0;
+        }
+
+        .contact-row {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 20px;
+            margin-top: 8px;
+        }
+
+        .contact-item {
+            display: flex;
+            align-items: center;
+            font-size: 12.5px;
+            font-weight: 700;
+            color: #0f172a;
+        }
+
+        .contact-icon {
+            width: 16px;
+            height: 16px;
+            margin-right: 6px;
+            object-fit: contain;
+        }
+
+        /* Exemption & Registration details */
+        .registration-box {
+            display: flex;
+            justify-content: space-between;
+            padding: 8px 10px 4px 10px;
+            font-size: 12.5px;
+            color: #0f172a;
+            font-weight: 600;
+        }
+
+        .reg-left {
+            display: flex;
+            flex-direction: column;
+            gap: 4px;
+        }
+
+        .reg-right {
+            text-align: right;
+        }
+
+        .divider-accent {
+            border: none;
+            border-top: 2px solid #FFF2EA;
+            margin: 4px 0 10px 0;
+        }
+
+        /* Title Banner */
+        .title-banner {
+            text-align: center;
+            font-size: 19px;
+            font-weight: 800;
+            color: #0f172a;
+            text-transform: uppercase;
+            text-decoration: underline;
+            letter-spacing: 1px;
+            margin-bottom: 15px;
+        }
+
+        /* Fields Grid (Pill style layout) */
+        .fields-grid {
+            display: flex;
+            flex-direction: column;
+            gap: 7px;
+            margin-bottom: 12px;
+        }
+
+        .fields-row {
+            display: flex;
+            gap: 12px;
+            width: 100%;
+        }
+
+        .pill-field {
+            display: flex;
+            align-items: center;
+            flex: 1;
+            min-width: 0;
+            /* Prevents overflow */
+        }
+
+        .pill-label {
+            background-color: #FFF2EA;
+            color: #0f172a;
+            font-size: 11.5px;
+            font-weight: 800;
+            text-transform: uppercase;
+            padding: 8px 12px;
+            border-radius: 20px;
+            text-align: center;
+            width: 155px;
+            flex-shrink: 0;
+            box-sizing: border-box;
+            margin-right: 8px;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+
+        .pill-value {
+            flex-grow: 1;
+            background-color: #ffffff;
+            border: 1px solid #cbd5e1;
+            color: #0f172a;
+            font-size: 13px;
+            font-weight: 600;
+            padding: 7px 14px;
+            border-radius: 20px;
+            min-height: 33px;
+            box-sizing: border-box;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            display: flex;
+            align-items: center;
+        }
+
+        /* Declaration Section */
+        .declaration-title {
+            text-align: center;
+            font-size: 13.5px;
+            font-weight: 800;
+            color: #0f172a;
+            text-transform: uppercase;
+            text-decoration: underline;
+            margin: 15px 0 6px 0;
+            letter-spacing: 0.5px;
+        }
+
+        .declaration-text {
+            text-align: justify;
+            font-size: 11px;
+            font-weight: 700;
+            line-height: 1.6;
+            color: #475569;
+            text-transform: uppercase;
+            margin: 0 auto;
+            max-width: 95%;
+            letter-spacing: 0.3px;
+        }
+
+        /* Footer Stamp & Signatory Block */
+        .footer-grid {
+            display: flex;
+            justify-content: space-between;
+            align-items: flex-end;
+            margin-top: 15px;
+            padding: 0 10px;
+        }
+
+        .footer-col-left {
+            width: 200px;
+        }
+
+        .stamp-box {
+            flex-grow: 1;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .stamp-img {
+            width: 110px;
+            height: 110px;
+            object-fit: contain;
+        }
+
+        .signatory-box {
+            text-align: right;
+            width: 200px;
+        }
+
+        .sig-title {
+            font-size: 11.5px;
+            font-weight: 800;
+            color: #475569;
+            text-transform: uppercase;
+            margin-bottom: 2px;
+        }
+
+        .sig-img-container {
+            height: 50px;
+            display: flex;
+            align-items: center;
+            justify-content: flex-end;
+        }
+
+        .sig-img {
+            height: 48px;
+            width: auto;
+            object-fit: contain;
+        }
+
+        .sig-name {
+            font-size: 12.5px;
+            font-weight: 800;
+            color: #0f172a;
+            margin: 2px 0 1px 0;
+            text-transform: uppercase;
+        }
+
+        .sig-role {
+            font-size: 10.5px;
+            color: #64748b;
+            font-weight: 600;
+        }
+
+        /* Thank You Pill Box */
+        .thank-you-banner {
+            background-color: #FFF2EA;
+            border-radius: 25px;
+            padding: 10px 0;
+            margin-top: 15px;
+            text-align: center;
+        }
+
+        .thank-you-text {
+            font-family: 'Playfair Display', Georgia, serif;
+            font-size: 23px;
+            font-weight: 700;
+            font-style: italic;
+            color: #5c1d4a;
+            /* Maroon/purple tone matching Canva */
+            margin: 0;
+            line-height: 1.2;
+        }
+    </style>
 </head>
-<body class="receipt-print-body">
+
+<body>
     <div class="receipt-container">
-        
-        <!-- Header bar -->
-        <div class="receipt-header-bar">
-            DONATION RECEIPT
-        </div>
-        
-        <!-- Top section with logo and foundation info -->
-        <div class="receipt-top-section">
-            <div class="receipt-logo-container">
-                <img class="receipt-logo" src="{{ url_for('static', filename='logo.png', _external=True) }}" alt="Logo">
+
+        <!-- Branding Header Peach Box -->
+        <div class="branding-box">
+            <div class="logo-col">
+                <img class="logo-img" src="{{ logo_url }}" alt="Logo">
             </div>
-            <div class="receipt-info-container">
-                <div class="receipt-foundation-name">MAKKALIL ORUVAN FOUNDATION</div>
-                <div class="receipt-address">No.6, Jothi Nagar, 9th Street, West Tambaram, Chennai-600 045</div>
-                <div class="receipt-contact">Email: makkailioruvanfoundation@gmail.com</div>
-                <div class="receipt-contact">Phone: 6382560775</div>
-            </div>
-        </div>
-        
-        <!-- Details grid -->
-        <div class="receipt-grid">
-            <!-- Left Side Data Grid -->
-            <div class="receipt-grid-left">
-                <div class="receipt-row">
-                    <div class="receipt-label">Payer Name</div>
-                    <div class="receipt-value">{{ payer_name }}</div>
-                </div>
-                <div class="receipt-row">
-                    <div class="receipt-label">Receipt No</div>
-                    <div class="receipt-value">{{ receipt_number }}</div>
-                </div>
-                <div class="receipt-row">
-                    <div class="receipt-label">Date</div>
-                    <div class="receipt-value">{{ payment_date }}</div>
-                </div>
-                <div class="receipt-row">
-                    <div class="receipt-label">Pavement mode</div>
-                    <div class="receipt-value">Online</div>
-                </div>
-                <div class="receipt-row">
-                    <div class="receipt-label">Ref.Numder</div>
-                    <div class="receipt-value">{{ reference_number }}</div>
-                </div>
-            </div>
-            
-            <!-- Right Side (Receipt Issued + Amount) -->
-            <div class="receipt-grid-right">
-                <div class="receipt-row-issued">
-                    <div class="receipt-label-issued">Receipt Issued</div>
-                    <div class="receipt-value-issued">{{ receipt_date }}</div>
-                </div>
-                
-                <!-- Rupee badge -->
-                <div class="receipt-amount-badge-container">
-                    <div class="receipt-amount-symbol-box">₹</div>
-                    <div class="receipt-amount-value-box">{{ amount }}</div>
+            <div class="info-col">
+                <h1 class="org-name-main">SEZHIYAM</h1>
+                <h2 class="org-name-sub">FOUNDATION</h2>
+                <p class="org-addr">No.6, Jothi Nagar, 9th Street, West Tambaram, Chennai-600 045</p>
+                <div class="contact-row">
+                    <div class="contact-item">
+                        <img class="contact-icon" src="{{ phone_icon_url }}" alt="Phone">
+                        6382560775
+                    </div>
+                    <div class="contact-item">
+                        <img class="contact-icon" src="{{ mail_icon_url }}" alt="Mail">
+                        sezhiyamfoundation@gmail.com
+                    </div>
                 </div>
             </div>
         </div>
-        
-        <!-- Thanks paragraph / narrative section -->
-        <div class="receipt-narrative">
-            Received with thanks from <span class="receipt-underline-field">Mr. {{ payer_name }}</span> the sum of INR <span class="receipt-underline-field">{{ amount_words }}</span>.
-            By <span class="receipt-underline-field">online</span> with payment reference no <span class="receipt-underline-field">{{ reference_number }}</span> for the <span class="receipt-underline-field">{{ event_name }}</span>.
-        </div>
-        
-        <hr class="receipt-divider">
-        
-        <!-- Footer / Signature section -->
-        <div class="receipt-footer">
-            <div class="receipt-received-by-label">Received By</div>
-            <div class="receipt-received-by-sub">For, Makkalil oruvan foundation</div>
-            
-            <div class="receipt-signature-container">
-                <img class="receipt-signature-img" src="{{ url_for('static', filename='signature.png', _external=True) }}" alt="Signature">
+
+        <!-- Exemption & Registration Box -->
+        <div class="registration-box">
+            <div class="reg-left">
+                <div>Registration No : 33/2021</div>
+                <div>I.T Exemption Cert. 80G No : CIT/CHE/80G/2021-22</div>
             </div>
-            
-            <div class="receipt-signer-name">Rubeswaran A</div>
-            <div class="receipt-signer-title">Founder</div>
+            <div class="reg-right">
+                <div>PAN No : AADTS8837B</div>
+            </div>
         </div>
-        
+
+        <hr class="divider-accent">
+
+        <!-- Banner Title -->
+        <div class="title-banner">Donation Receipt</div>
+
+        <!-- Fields Grid (Replicating Canva pill layout) -->
+        <div class="fields-grid">
+
+            <!-- Row 1: Receipt No & Issued Date -->
+            <div class="fields-row">
+                <div class="pill-field">
+                    <div class="pill-label">Receipt No</div>
+                    <div class="pill-value" style="font-family: monospace; font-weight: 700;">{{ receipt_number }}</div>
+                </div>
+                <div class="pill-field">
+                    <div class="pill-label">Receipt Issued On</div>
+                    <div class="pill-value">{{ receipt_date }}</div>
+                </div>
+            </div>
+
+            <!-- Row 2: Donor Name -->
+            <div class="fields-row">
+                <div class="pill-field" style="width: 100%;">
+                    <div class="pill-label">Donor Name</div>
+                    <div class="pill-value" style="font-weight: 700; font-size: 12px; color: #0f172a;">{{ payer_name }}
+                    </div>
+                </div>
+            </div>
+
+            <!-- Row 3: Address -->
+            <div class="fields-row">
+                <div class="pill-field" style="width: 100%;">
+                    <div class="pill-label">Address</div>
+                    <div class="pill-value">{{ donor_address if donor_address else 'Not Provided' }}</div>
+                </div>
+            </div>
+
+            <!-- Row 4: Email -->
+            <div class="fields-row">
+                <div class="pill-field" style="width: 100%;">
+                    <div class="pill-label">Email</div>
+                    <div class="pill-value">{{ donor_email if donor_email else 'Not Provided' }}</div>
+                </div>
+            </div>
+
+            <!-- Row 5: Mobile No & Donor's PAN -->
+            <div class="fields-row">
+                <div class="pill-field">
+                    <div class="pill-label">Mobile No</div>
+                    <div class="pill-value">{{ donor_mobile if donor_mobile else 'Not Provided' }}</div>
+                </div>
+                <div class="pill-field">
+                    <div class="pill-label">Donor's PAN No</div>
+                    <div class="pill-value">{{ donor_pan if donor_pan else 'Not Provided' }}</div>
+                </div>
+            </div>
+
+            <!-- Row 6: Aadhaar No & Payment Mode -->
+            <div class="fields-row">
+                <div class="pill-field">
+                    <div class="pill-label">Aadhaar No</div>
+                    <div class="pill-value">{{ donor_aadhaar if donor_aadhaar else 'Not Provided' }}</div>
+                </div>
+                <div class="pill-field">
+                    <div class="pill-label">Payment Mode</div>
+                    <div class="pill-value" style="font-weight: 700;">{{ payment_mode }}</div>
+                </div>
+            </div>
+
+            <!-- Row 7: Reference No & Date of Payment -->
+            <div class="fields-row">
+                <div class="pill-field">
+                    <div class="pill-label">Reference No</div>
+                    <div class="pill-value" style="font-family: monospace;">{{ reference_number }}</div>
+                </div>
+                <div class="pill-field">
+                    <div class="pill-label">Date of Payment</div>
+                    <div class="pill-value">{{ payment_date }}</div>
+                </div>
+            </div>
+
+            <!-- Row 8: Amount Received (Figures) -->
+            <div class="fields-row">
+                <div class="pill-field" style="flex: 0.5;">
+                    <div class="pill-label">Amount Received</div>
+                    <div class="pill-value" style="font-weight: 800; font-size: 13px;">₹{{ amount }}</div>
+                </div>
+                <div style="flex: 0.5;"></div> <!-- Matches Canva spacing where figures box is short -->
+            </div>
+
+            <!-- Row 9: Amount Received (Words) -->
+            <div class="fields-row">
+                <div class="pill-field" style="width: 100%;">
+                    <div class="pill-label">Amount Received</div>
+                    <div class="pill-value" style="font-style: italic; font-weight: 600; text-transform: capitalize;">
+                        INR {{ amount_words }} Only</div>
+                </div>
+            </div>
+
+            <!-- Row 10: Purpose -->
+            <div class="fields-row">
+                <div class="pill-field" style="width: 100%;">
+                    <div class="pill-label">Purpose</div>
+                    <div class="pill-value" style="font-weight: 700;">{{ event_name }}</div>
+                </div>
+            </div>
+
+        </div>
+
+        <!-- Declaration Section -->
+        <div class="declaration-title">Declaration</div>
+        <p class="declaration-text">
+            We gratefully acknowledge the above donation received towards the charitable activities of Sezhiyam
+            Foundation.
+            Your generous contribution helps us continue serving communities through education, healthcare, food
+            support,
+            and social welfare initiatives.
+        </p>
+
+        <hr class="divider-accent" style="margin-top: 15px; margin-bottom: 5px;">
+
+        <!-- Footer Section -->
+        <div class="footer-grid">
+            <div class="footer-col-left"></div>
+            <div class="stamp-box">
+                <img class="stamp-img" src="{{ stamp_url }}" alt="Foundation Stamp">
+            </div>
+            <div class="signatory-box">
+                <div class="sig-title">Authorized Signatory</div>
+                <div class="sig-img-container">
+                    <img class="sig-img" src="{{ signature_url }}" alt="Signature">
+                </div>
+                <div class="sig-name">Rubeswaran A</div>
+                <div class="sig-role">Founder</div>
+            </div>
+        </div>
+
+        <!-- Thank You Banner -->
+        <div class="thank-you-banner">
+            <h3 class="thank-you-text">Thank You</h3>
+        </div>
+
     </div>
 </body>
+
 </html>
